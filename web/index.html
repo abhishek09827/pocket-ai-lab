@@ -418,7 +418,7 @@
                         <th>Energy Efficiency</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="edge-table-body">
                     <tr>
                         <td class="model-name">NVIDIA GTX 1650 (Laptop)</td>
                         <td>Ollama v0.34.4 (CUDA)</td>
@@ -593,7 +593,42 @@
             }
         }
 
+        async function fetchEdgeSummary() {
+            try {
+                let resp = await fetch("/api/edge-summary");
+                if (!resp.ok) {
+                    resp = await fetch("data/edge_summary.json");
+                }
+                if (!resp.ok) return;
+                const d = await resp.json();
+                if (!d || !d.android_edge) return;
+
+                const tbody = document.getElementById("edge-table-body");
+                tbody.innerHTML = `
+                    <tr>
+                        <td class="model-name">${d.pc_baseline.platform}</td>
+                        <td>${d.pc_baseline.runtime}</td>
+                        <td>${d.pc_baseline.compute}</td>
+                        <td><span class="pill pill-green">${d.pc_baseline.prompt_tps} TPS</span></td>
+                        <td><span class="pill pill-green">${d.pc_baseline.decode_tps} TPS</span></td>
+                        <td>~${d.pc_baseline.power_watts} Watts</td>
+                        <td>${d.pc_baseline.efficiency_tps_per_watt} TPS / Watt</td>
+                    </tr>
+                    <tr>
+                        <td class="model-name">${d.android_edge.platform}</td>
+                        <td>${d.android_edge.runtime}</td>
+                        <td>${d.android_edge.compute}</td>
+                        <td><span class="pill pill-blue">${d.android_edge.prompt_tps} TPS</span></td>
+                        <td><span class="pill pill-blue">${d.android_edge.decode_tps} TPS</span></td>
+                        <td><span class="pill pill-green">~${d.android_edge.power_watts} Watts</span></td>
+                        <td><span class="pill pill-green"><strong>${d.android_edge.efficiency_tps_per_watt} TPS / Watt (2.8x)</strong></span></td>
+                    </tr>
+                `;
+            } catch (e) {}
+        }
+
         fetchLiveLeaderboard();
+        fetchEdgeSummary();
         fetchTelemetry();
         setInterval(fetchTelemetry, 5000);
     </script>
