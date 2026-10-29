@@ -467,10 +467,13 @@
     </div>
 
     <script>
-        // Auto-fetch live leaderboard if Control Plane API is active
+        // Auto-fetch live leaderboard if Control Plane API is active, fallback to static JSON
         async function fetchLiveLeaderboard() {
             try {
-                const resp = await fetch("/api/leaderboard");
+                let resp = await fetch("/api/leaderboard");
+                if (!resp.ok) {
+                    resp = await fetch("data/leaderboard.json");
+                }
                 if (!resp.ok) return;
                 const data = await resp.json();
                 if (!data || data.length === 0) return;

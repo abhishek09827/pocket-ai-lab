@@ -301,6 +301,15 @@ def list_edge_results() -> List[Dict[str, Any]]:
     return android_records
 
 
+@app.get("/scripts/android_bench.sh")
+def download_android_harness() -> FileResponse:
+    """Download Android benchmark harness script directly over the loopback SSH tunnel."""
+    script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts", "android_bench.sh")
+    if not os.path.exists(script_path):
+        raise HTTPException(status_code=404, detail="Script not found")
+    return FileResponse(script_path, media_type="text/x-shellscript", filename="android_bench.sh")
+
+
 # Mount static website if directory exists
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
 if os.path.exists(STATIC_DIR):
