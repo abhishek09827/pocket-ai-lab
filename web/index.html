@@ -401,6 +401,46 @@
             </table>
         </div>
 
+        <!-- Hardware Comparison: Edge Mobile vs Laptop GPU -->
+        <div class="section-title">
+            <span>📱 Edge Mobile (Dimensity 920) vs Laptop GPU (GTX 1650) Empirical Frontier</span>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Platform & Architecture</th>
+                        <th>Execution Engine</th>
+                        <th>Compute Device</th>
+                        <th>Prompt Speed</th>
+                        <th>Decode Speed</th>
+                        <th>Power Consumption</th>
+                        <th>Energy Efficiency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="model-name">NVIDIA GTX 1650 (Laptop)</td>
+                        <td>Ollama v0.34.4 (CUDA)</td>
+                        <td>Dedicated 4GB GDDR6</td>
+                        <td><span class="pill pill-green">354.2 TPS</span></td>
+                        <td><span class="pill pill-green">46.41 TPS</span></td>
+                        <td>~50 Watts</td>
+                        <td>0.92 TPS / Watt</td>
+                    </tr>
+                    <tr>
+                        <td class="model-name">realme 9 Pro+ (Dimensity 920)</td>
+                        <td>llama.cpp ARM64 CLI (6T)</td>
+                        <td>2x A78 + 4x A55 CPU</td>
+                        <td><span class="pill pill-blue">16.10 TPS</span></td>
+                        <td><span class="pill pill-blue">10.60 TPS</span></td>
+                        <td><span class="pill pill-green">~4 Watts</span></td>
+                        <td><span class="pill pill-green"><strong>2.65 TPS / Watt (2.8x)</strong></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
         <!-- Visual Analysis Gallery -->
         <div class="section-title">
             <span>📊 Publication Visual Analysis Gallery</span>

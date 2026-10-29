@@ -119,7 +119,13 @@ echo "[Engine] Using binary: ${LLAMA_CLI}"
 # ------------------------------------------------------------------------------
 if [ ! -f "${MODEL_PATH}" ]; then
     echo "[Model] Downloading Qwen2.5 1.5B Q4_K_M (~986 MB) to ${MODEL_PATH}..."
-    curl -L --progress-bar -o "${MODEL_PATH}" "${MODEL_URL}"
+    if command -v aria2c >/dev/null 2>&1; then
+        echo "[Model] Using high-speed multi-connection aria2c..."
+        aria2c -x 8 -s 8 -k 1M -d "${MODELS_DIR}" -o "${MODEL_NAME}" "${MODEL_URL}"
+    else
+        echo "[Model] Using curl..."
+        curl -L -C - --progress-bar -o "${MODEL_PATH}" "${MODEL_URL}"
+    fi
 fi
 echo "[Model] Verified model file: $(ls -lh "${MODEL_PATH}" | awk '{print $5}')"
 
@@ -135,8 +141,8 @@ PROMPTS=(
 )
 
 WARMUPS=1
-REPEATS=2
-NUM_THREADS=4  # Dimensity 920 has 2x Cortex-A78 big cores + 6x Cortex-A55. 4 threads is the sweet spot.
+REPEATS=1
+NUM_THREADS=6  # Dimensity 920 has 2x Cortex-A78 big cores + 6x Cortex-A55. 6 threads is optimal.
 
 echo "[Benchmark] Starting benchmark loop (Warmups: ${WARMUPS}, Repeats: ${REPEATS}, Threads: ${NUM_THREADS})..."
 
@@ -168,8 +174,9 @@ for item in "${PROMPTS[@]}"; do
         "${LLAMA_CLI}" \
             -m "${MODEL_PATH}" \
             -p "${PROMPT_TEXT}" \
-            -n 256 \
+            -n 128 \
             -t "${NUM_THREADS}" \
+            --single-turn \
             --temp 0.0 \
             --repeat-penalty 1.0 \
             > "${LOG_TMP}" 2>&1 || true
@@ -182,22 +189,25 @@ for item in "${PROMPTS[@]}"; do
         BATTERY_AFTER=$(get_battery_pct)
         TEMP_AFTER=$(get_thermal_temp_c)
 
-        # Parse llama.cpp timing report:
-        # llama_perf_context_print:        load time =     214.32 ms
-        # llama_perf_context_print: prompt eval time =      42.10 ms /    15 tokens (   356.29 t/s)
-        # llama_perf_context_print:        eval time =    1240.50 ms /    45 tokens (    36.28 t/s)
+        # Parse timings
+        PROMPT_TPS=$(grep -oE "Prompt: [0-9.]+ t/s" "${LOG_TMP}" | awk '{print $2}' || true)
+        if [ -z "${PROMPT_TPS:-}" ]; then
+            PROMPT_TPS=$(grep "prompt eval time" "${LOG_TMP}" | tail -n1 | grep -o '[0-9.]* t/s' | awk '{print $1}' || echo "0.0")
+        fi
+
+        DECODE_TPS=$(grep -oE "Generation: [0-9.]+ t/s" "${LOG_TMP}" | awk '{print $2}' || true)
+        if [ -z "${DECODE_TPS:-}" ]; then
+            DECODE_TPS=$(grep "eval time =" "${LOG_TMP}" | tail -n1 | grep -o '[0-9.]* t/s' | awk '{print $1}' || echo "0.0")
+        fi
+
         LOAD_TIME=$(grep "load time" "${LOG_TMP}" | tail -n1 | grep -o '[0-9.]* ms' | awk '{print $1}' || echo "0.0")
         PROMPT_TOKENS=$(grep "prompt eval time" "${LOG_TMP}" | tail -n1 | awk -F'/' '{print $2}' | awk '{print $1}' || echo "0")
-        PROMPT_TPS=$(grep "prompt eval time" "${LOG_TMP}" | tail -n1 | grep -o '[0-9.]* t/s' | awk '{print $1}' || echo "0.0")
         DECODE_TOKENS=$(grep "eval time =" "${LOG_TMP}" | tail -n1 | awk -F'/' '{print $2}' | awk '{print $1}' || echo "0")
-        DECODE_TPS=$(grep "eval time =" "${LOG_TMP}" | tail -n1 | grep -o '[0-9.]* t/s' | awk '{print $1}' || echo "0.0")
 
-        # Response text extraction
-        RESPONSE_TEXT=$(head -n 20 "${LOG_TMP}" | tr '\n' ' ' | sed 's/"/\\"/g' | cut -c 1-300)
-
+        RESPONSE_TEXT=$(grep -v -E "Loading model|build|modalities|available commands|Prompt:|Exiting|^>" "${LOG_TMP}" | tr '\n' ' ' | sed 's/"/\\"/g' | cut -c 1-200)
         rm -f "${LOG_TMP}"
 
-        echo "  Result: Prompt TPS: ${PROMPT_TPS} | Decode TPS: ${DECODE_TPS} | Temp: ${TEMP_BEFORE}°C -> ${TEMP_AFTER}°C | Battery: ${BATTERY_BEFORE}%"
+        echo "  Result: Prompt TPS: ${PROMPT_TPS:-0.0} | Decode TPS: ${DECODE_TPS:-0.0} | Temp: ${TEMP_BEFORE}°C -> ${TEMP_AFTER}°C | Battery: ${BATTERY_BEFORE}%"
 
         # Emit strict JSONL line adhering to Pocket AI Lab schema
         RUN_ID="${EXP_ID}_${PROMPT_ID}_run${RUN_IDX}"
