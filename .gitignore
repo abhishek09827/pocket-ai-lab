@@ -57,9 +57,22 @@ secrets/
 # Local credentials & sensitive configs
 *tailscale_key*
 *token*
+*.token
+.pocket_ai_lab_token
+token.txt
 *.creds
+
+# Test & Mock Artifacts
+results/*mock*
+results/*phase0*
+results/test_*
+
+# Logs & Debug
+*.log
+logs/
 
 # Temporary debug artifacts & raw logs containing potential IPs or unredacted traces
 *.tmp
 *.bak
 scratch/
+Thumbs.db

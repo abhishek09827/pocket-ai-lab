@@ -13,6 +13,8 @@
 
 ## 🌟 Live Interactive Dashboard
 
+[![Pocket AI Lab Interactive Dashboard](docs/assets/dashboard_preview.png)](https://abhishek09827.github.io/pocket-ai-lab/)
+
 Explore the full 11-tab interactive research portal deployed live at:  
 👉 **[https://abhishek09827.github.io/pocket-ai-lab/](https://abhishek09827.github.io/pocket-ai-lab/)**
 

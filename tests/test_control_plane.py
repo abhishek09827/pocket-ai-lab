@@ -1,4 +1,5 @@
 """Automated tests for Pocket AI Lab Control Plane API."""
+import os
 import pytest
 from fastapi.testclient import TestClient
 
@@ -86,7 +87,7 @@ def test_upload_results_rejects_invalid_extension():
     assert resp.status_code == 400
 
 
-def test_upload_results_success(tmp_path):
+def test_upload_results_success():
     sample_jsonl = b'{"schema_version": "1.0.0", "execution_location": "local_android"}\n'
     resp = client.post(
         "/api/upload-results",
@@ -97,6 +98,11 @@ def test_upload_results_success(tmp_path):
     data = resp.json()
     assert data["status"] == "success"
     assert data["filename"] == "android_test_mock.jsonl"
+    # Clean up mock file created by test
+    results_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results")
+    mock_file = os.path.join(results_dir, "android_test_mock.jsonl")
+    if os.path.exists(mock_file):
+        os.remove(mock_file)
 
 
 def test_deployment_recommendation_endpoint():

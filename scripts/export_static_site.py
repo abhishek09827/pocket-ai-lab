@@ -276,10 +276,10 @@ def export_static_site(project_root: str = ".") -> str:
 
 
     # 6. Copy visual charts
-    source_charts = os.path.join(results_dir, "charts")
-    if os.path.exists(source_charts):
-        for img in glob.glob(os.path.join(source_charts, "*.png")):
-            shutil.copy(img, os.path.join(charts_dir, os.path.basename(img)))
+    for chart_source_dir in [os.path.join(results_dir, "charts"), os.path.join(project_root, "web", "charts")]:
+        if os.path.exists(chart_source_dir):
+            for img in glob.glob(os.path.join(chart_source_dir, "*.png")):
+                shutil.copy(img, os.path.join(charts_dir, os.path.basename(img)))
 
     # 4. Copy and update web/index.html to dist/index.html
     src_html = os.path.join(project_root, "web", "index.html")
