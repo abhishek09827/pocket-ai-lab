@@ -100,6 +100,7 @@ def plot_energy_efficiency_pareto(output_png: str):
     # Data points
     points = [
         {"name": "realme 9 Pro+ (Dimensity 920)\nqwen2.5:1.5b @ 4W", "power": 4.0, "tps": 10.64, "eff": 2.66, "color": "#10b981", "shape": "*", "size": 280},
+        {"name": "Host PC (GTX 1650 4GB)\nqwen2.5:0.5b @ 50W", "power": 50.0, "tps": 142.58, "eff": 2.85, "color": "#06b6d4", "shape": "^", "size": 200},
         {"name": "Host PC (GTX 1650 4GB)\nqwen2.5:1.5b @ 50W", "power": 50.0, "tps": 46.41, "eff": 0.93, "color": "#0284c7", "shape": "s", "size": 180},
         {"name": "Host PC (GTX 1650 4GB)\nllama3.2:1b @ 50W", "power": 50.0, "tps": 43.91, "eff": 0.88, "color": "#0284c7", "shape": "s", "size": 180},
         {"name": "Host PC (GTX 1650 4GB)\nqwen2.5-coder:3b @ 50W", "power": 50.0, "tps": 21.40, "eff": 0.43, "color": "#f59e0b", "shape": "o", "size": 180},
@@ -126,7 +127,7 @@ def plot_energy_efficiency_pareto(output_png: str):
     ax.set_ylabel("Autoregressive Decode Throughput (Tokens/s)", fontsize=11, fontweight="bold")
     ax.set_title("The Energy Inversion: Tokens-per-Watt Pareto Frontier (PC vs Edge Mobile)", fontsize=12, fontweight="bold", pad=12)
     ax.set_xlim(0, 58)
-    ax.set_ylim(0, 55)
+    ax.set_ylim(0, 165)
     ax.grid(True, linestyle="--", alpha=0.4)
     ax.legend(loc="upper left", framealpha=0.9, fontsize=9)
 
@@ -141,9 +142,9 @@ def plot_ttft_latency(output_png: str):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5.5))
 
     # Panel A: Median TTFT on GTX 1650 PC
-    models = ["llama3.2:1b\n(Q8_0)", "qwen2.5:1.5b\n(Q4_K_M)", "qwen2.5-coder:3b\n(Q4_K_M)", "qwen2.5:3b\n(Q4_K_M)"]
-    ttfts = [25.0, 33.9, 41.1, 46.8]
-    colors = ["#10b981", "#0284c7", "#f59e0b", "#6366f1"]
+    models = ["qwen2.5:0.5b\n(Q4_K_M)", "llama3.2:1b\n(Q8_0)", "qwen2.5:1.5b\n(Q4_K_M)", "qwen2.5-coder:3b\n(Q4_K_M)", "qwen2.5:3b\n(Q4_K_M)"]
+    ttfts = [18.8, 25.0, 33.9, 41.1, 46.8]
+    colors = ["#06b6d4", "#10b981", "#0284c7", "#f59e0b", "#6366f1"]
 
     bars = ax1.bar(models, ttfts, color=colors, width=0.55, edgecolor="#1f2937", linewidth=1.2)
     ax1.set_ylabel("Client-Side Time-to-First-Token (ms)", fontsize=11, fontweight="bold")
@@ -187,6 +188,7 @@ def plot_cognitive_tradeoff(output_png: str):
     fig, ax = plt.subplots(figsize=(10, 6.5))
 
     models = [
+        {"name": "qwen2.5:0.5b", "hotpot": 100.0, "alfworld": 0.0, "tps": 142.6, "vram": 764, "color": "#06b6d4", "label": "qwen2.5:0.5b\n[Micro-Edge 0.5B]"},
         {"name": "qwen2.5-coder:3b", "hotpot": 60.0, "alfworld": 60.0, "tps": 21.4, "vram": 2227, "color": "#f59e0b", "label": "qwen2.5-coder:3b\n[Code-Specialized 3.1B]"},
         {"name": "qwen2.5:3b", "hotpot": 100.0, "alfworld": 20.0, "tps": 19.4, "vram": 2228, "color": "#6366f1", "label": "qwen2.5:3b\n[General Instruct 3.1B]"},
         {"name": "qwen2.5:1.5b", "hotpot": 100.0, "alfworld": 0.0, "tps": 46.4, "vram": 1293, "color": "#0284c7", "label": "qwen2.5:1.5b\n[Compact General 1.5B]"},
