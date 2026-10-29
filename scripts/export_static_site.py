@@ -195,25 +195,85 @@ def export_static_site(project_root: str = ".") -> str:
     for f in sorted(glob.glob(os.path.join(results_dir, "*.jsonl")), reverse=True):
         with open(f, "r", encoding="utf-8") as fp:
             for line in fp:
-                if line.strip():
+                line = line.strip()
+                if line:
                     try:
                         d = json.loads(line)
                         raw_recs.append({
                             "run_id": d.get("run_id", "N/A"),
                             "timestamp": d.get("timestamp_utc", ""),
-                            "platform": "Android (Dimensity 920)" if "android" in d.get("execution_location", "") else "Host PC (GTX 1650)",
-                            "model": d.get("model_tag", "N/A"),
-                            "task": d.get("prompt_id", "N/A"),
-                            "decode_tps": d.get("decode_tps", 0.0),
-                            "prompt_tps": d.get("prompt_tps", 0.0),
-                            "ttft_ms": d.get("ttft_client_ms", d.get("e2e_client_ms", 0.0)),
+                            "platform": "Android (Dimensity 920)" if "android" in str(d.get("execution_location", "")) else "Host PC (GTX 1650)",
+                            "model": d.get("model_tag", d.get("model", {}).get("model_tag", "N/A")),
+                            "task": d.get("prompt_id", d.get("task_id", "N/A")),
+                            "decode_tps": d.get("decode_tps", d.get("metrics", {}).get("decode_tps", 0.0)),
+                            "prompt_tps": d.get("prompt_tps", d.get("metrics", {}).get("prompt_tps", 0.0)),
+                            "ttft_ms": d.get("ttft_client_ms", d.get("metrics", {}).get("ttft_client_ms", 0.0)),
                         })
                     except Exception:
                         pass
-        if len(raw_recs) >= 50:
+        if len(raw_recs) >= 100:
             break
     with open(os.path.join(data_dir, "raw_records.json"), "w", encoding="utf-8") as fp:
-        json.dump(raw_recs[:50], fp, indent=2)
+        json.dump(raw_recs[:100], fp, indent=2)
+
+    # 6. Compile Application-Level Evaluations
+    app_eval_summary = {
+        "coding": {
+            "model": "qwen2.5-coder:1.5b",
+            "score_pct": 100.0,
+            "tasks_passed": 10,
+            "tasks_total": 10,
+            "ci_95_pct": [72.2, 100.0],
+            "breakdown": {
+                "algorithms": "4/4 (Fibonacci, Palindrome, Merge Intervals, Binary Search)",
+                "bug_fixes": "3/3 (Loop Bound, KeyError Guard, ZeroDivision & Rounding)",
+                "sql_queries": "3/3 (JOIN & GROUP BY, HAVING Aggregate, Date Filtering)"
+            }
+        },
+        "structured_extraction": {
+            "model": "qwen2.5-coder:1.5b",
+            "score_pct": 90.0,
+            "tasks_passed": 9,
+            "tasks_total": 10,
+            "ci_95_pct": [59.6, 98.2],
+            "breakdown": {
+                "json_schema": "4/4 valid types and required properties",
+                "negative_controls": "2/2 zero hallucinated extra keys",
+                "multilingual_hi_en": "3/4 (Failed Hindi phonetic transliteration 'Jaya Pur' vs 'Jaipur')"
+            }
+        },
+        "retrieval_offline_rag": {
+            "model": "nomic-embed-text (137M nomic-bert)",
+            "recall_at_1_pct": 100.0,
+            "recall_at_5_pct": 100.0,
+            "mrr": 1.0,
+            "avg_latency_ms": 3028.17,
+            "vram_used_mb": 323.0,
+            "embedding_dim": 768
+        },
+        "reasoning_v2": {
+            "model": "qwen2.5-coder:1.5b",
+            "total_tasks": 30,
+            "hotpotqa": {"score_pct": 93.3, "ci_95_pct": [70.2, 98.8], "passed": 14, "total": 15},
+            "alfworld": {"score_pct": 46.7, "ci_95_pct": [24.8, 69.9], "passed": 7, "total": 15}
+        }
+    }
+    with open(os.path.join(data_dir, "app_eval_summary.json"), "w", encoding="utf-8") as fp:
+        json.dump(app_eval_summary, fp, indent=2)
+
+    # 7. Compile Sustained Mobile Benchmark Data
+    mobile_sustained_src = os.path.join(results_dir, "mobile_sustained_qwen2_5_1_5b.json")
+    if os.path.exists(mobile_sustained_src):
+        shutil.copy(mobile_sustained_src, os.path.join(data_dir, "mobile_sustained.json"))
+
+    # 8. Downloadable Data Assets in dist/downloads/
+    downloads_dir = os.path.join(dist_dir, "downloads")
+    os.makedirs(downloads_dir, exist_ok=True)
+    for f in glob.glob(os.path.join(results_dir, "*.csv")):
+        shutil.copy(f, os.path.join(downloads_dir, os.path.basename(f)))
+    for f in glob.glob(os.path.join(results_dir, "*.jsonl")):
+        shutil.copy(f, os.path.join(downloads_dir, os.path.basename(f)))
+
 
     # 6. Copy visual charts
     source_charts = os.path.join(results_dir, "charts")

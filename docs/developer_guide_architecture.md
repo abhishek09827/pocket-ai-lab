@@ -4,390 +4,309 @@
 > **Repository:** `pocket-ai-lab`  
 > **Status:** Production-Ready / Open Empirical Research  
 > **Last Updated:** October 2026  
+> **Test Suite:** 68 / 68 Passed (100% Green)
 
 ---
 
 ## Table of Contents
 1. [Core Thesis: The "What" and "Why"](#1-core-thesis-the-what-and-why)
-2. [End-to-End System Architecture](#2-end-to-end-system-architecture)
-3. [Deep-Dive Module Engineering](#3-deep-dive-module-engineering)
-   - [3.1 Zero-Trust Network Perimeter & Loopback Enforcement](#31-zero-trust-network-perimeter--loopback-enforcement)
-   - [3.2 Telemetry Engine & Hardware Samplers](#32-telemetry-engine--hardware-samplers)
-   - [3.3 Benchmark Evaluation Harness & Latency Accounting](#33-benchmark-evaluation-harness--latency-accounting)
-   - [3.4 Cognitive Reasoning & ALFWorld Embodied Causality](#34-cognitive-reasoning--alfworld-embodied-causality)
-   - [3.5 Sustained Thermal Equilibrium Stress Testing](#35-sustained-thermal-equilibrium-stress-testing)
-   - [3.6 Context Window Scaling & KV-Cache Footprint ($O(N)$ vs $O(N^2)$)](#36-context-window-scaling--kv-cache-footprint)
-   - [3.7 On-Device Mobile Execution (Android 13 / Termux ARM64)](#37-on-device-mobile-execution-android-13--termux-arm64)
-   - [3.8 Local Control Plane Daemon & Server-Sent Events (SSE) Streaming](#38-local-control-plane-daemon--server-sent-events-sse-streaming)
-   - [3.9 Interactive Web Dashboard & Zero-Dependency Static Deployment](#39-interactive-web-dashboard--zero-dependency-static-deployment)
-4. [Data Schemas & Storage Hierarchy](#4-data-schemas--storage-hierarchy)
-5. [Developer Runbook & CLI Recipes](#5-developer-runbook--cli-recipes)
-6. [Troubleshooting & Hardware Edge Cases](#6-troubleshooting--hardware-edge-cases)
+2. [End-to-End System Architecture & Dual-Hardware Testbed](#2-end-to-end-system-architecture--dual-hardware-testbed)
+3. [Measurement Boundaries & Benchmark Reliability](#3-measurement-boundaries--benchmark-reliability)
+   - [3.1 Latency Accounting: Client TTFT vs Server Prefill vs Decode Time](#31-latency-accounting-client-ttft-vs-server-prefill-vs-decode-time)
+   - [3.2 Ollama KV Cache Hit Invariant & Detection](#32-ollama-kv-cache-hit-invariant--detection)
+   - [3.3 Linux Pressure Stall Information (PSI) Monitoring](#33-linux-pressure-stall-information-psi-monitoring)
+   - [3.4 Statistical Rigor: Wilson Score 95% Confidence Intervals](#34-statistical-rigor-wilson-score-95-confidence-intervals)
+   - [3.5 Explicit Run Status & Error Classification](#35-explicit-run-status--error-classification)
+4. [Application-Level AI Evaluators](#4-application-level-ai-evaluators)
+   - [4.1 Sandboxed Coding Evaluator (AST, Subprocess Runner, SQL Syntax)](#41-sandboxed-coding-evaluator)
+   - [4.2 Structured JSON & Multilingual Extraction](#42-structured-json--multilingual-extraction)
+   - [4.3 Function Tool Calling & False-Positive Prevention](#43-function-tool-calling--false-positive-prevention)
+   - [4.4 Dense Semantic Retrieval & Offline RAG (`nomic-embed-text`)](#44-dense-semantic-retrieval--offline-rag)
+5. [Sustained Mobile Inference & Thermal Analysis](#5-sustained-mobile-inference--thermal-analysis)
+   - [5.1 Physical Setup: realme 9 Pro+ & Dimensity 920](#51-physical-setup-realme-9-pro--dimensity-920)
+   - [5.2 10-Pass Sustained Workload & Thermal Throttling Curve (-29.43%)](#52-10-pass-sustained-workload--thermal-throttling-curve)
+   - [5.3 Memory Stability & OOM Freedom](#53-memory-stability--oom-freedom)
+   - [5.4 Measurement Rigor: Battery Delta vs Calibrated Energy](#54-measurement-rigor-battery-delta-vs-calibrated-energy)
+6. [Deployment Recommendation Engine](#6-deployment-recommendation-engine)
+   - [6.1 Headroom Calculation & Resource Modeling](#61-headroom-calculation--resource-modeling)
+   - [6.2 Verdict State Machine & Limitation Warnings](#62-verdict-state-machine--limitation-warnings)
+7. [Local Control Plane & 11-Tab Interactive Dashboard](#7-local-control-plane--11-tab-interactive-dashboard)
+8. [Developer Runbook & Complete CLI Recipes](#8-developer-runbook--complete-cli-recipes)
+9. [Troubleshooting & Hardware Edge Cases](#9-troubleshooting--hardware-edge-cases)
 
 ---
 
 ## 1. Core Thesis: The "What" and "Why"
 
 ### What is Pocket AI Lab?
-**Pocket AI Lab** is a reproducible, personal edge AI workstation and benchmarking harness designed to measure Small Language Models (SLMs, 1B–3.5B parameters) across consumer laptop hardware (WSL2 / NVIDIA GTX 1650) and handheld mobile devices (realme 9 Pro+ / MediaTek Dimensity 920).
+**Pocket AI Lab** is an enterprise-grade, personal edge AI workstation and benchmarking testbed designed to measure Small Language Models (SLMs, 0.5B–3.5B parameters) across real consumer laptop hardware (WSL2 / NVIDIA GTX 1650) and handheld mobile devices (realme 9 Pro+ / MediaTek Dimensity 920).
 
 ### Why Was It Built?
 Conventional LLM benchmarks suffer from three major distortions:
 1. **Synthetic Fabrication:** Metrics are often derived from cloud API token counters or idealized single-prompt forward passes that hide host OS overhead, client-side network latency, and memory allocation penalties.
 2. **Thermal Blindness:** Benchmarks measure short "burst" runs, completely ignoring thermal equilibrium throttling when running on enclosed form factors (laptops, phones).
-3. **Perplexity Disconnect:** Traditional perplexity or basic MMLU checks fail to evaluate whether a small model understands **physical causality** (affordance constraints in sequential decision-making).
+3. **Perplexity Disconnect:** Traditional perplexity or basic MMLU checks fail to evaluate whether a small model can perform real-world tasks (sandboxed code execution, strict JSON schema validation, or sequential state planning).
 
 Pocket AI Lab operates under strict invariants:
-- **Zero Fabrication:** Every number must originate from physical non-blocking kernel and hardware counters (`nvidia-smi`, `/proc/meminfo`, Android sysfs).
+- **Zero Fabrication:** Every metric originates from physical non-blocking kernel and hardware counters (`nvidia-smi`, `/proc/pressure/memory`, Android sysfs).
 - **Zero-Trust Network Perimeter:** Never bind to `0.0.0.0`. Local services bind strictly to `127.0.0.1` (loopback), and mobile communication is routed through encrypted WireGuard meshes (Tailscale) via SSH port-forwarding tunnels.
 - **Reproducible Artifacts:** All data is appended to immutable JSONL ledgers, versioned alongside prompts and Git commit hashes.
 
 ---
 
-## 2. End-to-End System Architecture
-
-The following diagram illustrates how the host workstation, the authenticated control plane, the Ollama CUDA engine, and the remote mobile edge device interact:
+## 2. End-to-End System Architecture & Dual-Hardware Testbed
 
 ```mermaid
 flowchart TD
-    subgraph Host_Workstation["Host PC: Intel i5-10300H + NVIDIA GTX 1650 (Ubuntu 24.04 WSL2)"]
+    subgraph Host_Workstation["Host PC: Intel Core i5-10300H + NVIDIA GTX 1650 (Ubuntu 24.04 WSL2)"]
         direction TB
         subgraph Security_Perimeter["Zero-Trust Loopback Perimeter (127.0.0.1)"]
             CP["FastAPI Control Plane<br><code>127.0.0.1:8000</code><br>(Auth: X-Pocket-Token)"]
-            Ollama["Ollama Engine (CUDA cuBLAS)<br><code>127.0.0.1:11434</code><br>Models: Qwen2.5, Llama3.2"]
-            Static["Static Dashboard UI<br><code>/web/index.html</code>"]
+            Ollama["Ollama Engine (CUDA cuBLAS)<br><code>127.0.0.1:11434</code><br>Models: Qwen2.5, Llama3.2, Nomic-Embed"]
+            Static["Static Dashboard UI<br><code>dist/index.html</code>"]
         end
-
-        subgraph Core_Pipelines["Core Execution & Telemetry Modules"]
-            Bench["Benchmark Runner<br><code>src/benchmark.py</code>"]
-            Reason["Reasoning Evaluator<br><code>src/reasoning_evaluator.py</code>"]
-            Stress["Thermal Stress Harness<br><code>src/stress_test.py</code>"]
-            Scaling["Context Scaling Suite<br><code>src/context_scaling_bench.py</code>"]
-            Telemetry["Telemetry Sampler<br><code>src/telemetry.py</code>"]
-        end
-
-        subgraph Storage_Layer["Persistent Append-Only Ledgers"]
-            JSONL["<code>results/*.jsonl</code>"]
-            CSV["<code>results/*.csv</code>"]
-            Charts["<code>results/charts/*.png</code>"]
-        end
+        Harness["Evaluation & Benchmarking Engine<br><code>src/benchmark.py</code><br><code>src/run_application_eval.py</code>"]
+        Recommender["Deployment Recommender<br><code>src/recommender.py</code>"]
+        Tele["Linux PSI & GPU Telemetry<br><code>src/telemetry.py</code>"]
+        Harness --> Ollama
+        Harness --> Tele
+        CP --> Harness
+        CP --> Recommender
     end
 
-    subgraph Tailscale_Mesh["Tailscale Encrypted WireGuard Mesh (100.x.y.z)"]
-        Mesh["Encrypted Point-to-Point Tunnel<br>PC: 100.82.20.127 <---> Phone: 100.84.51.84"]
+    subgraph Tailscale_Mesh["Encrypted WireGuard Mesh (100.x.y.z)"]
+        Tunnel["SSH Tunnel (Port 8022)<br>Non-blocking single-turn pipe"]
     end
 
-    subgraph Mobile_Edge["Edge Mobile Target: realme 9 Pro+ (Android 13 / Termux)"]
-        direction TB
-        SSH_Server["OpenSSH Server<br><code>port 8022</code> (Ed25519 Key Auth)"]
-        Llama_CLI["Native <code>llama-completion</code> / <code>llama-cli</code><br>ARM NEON Vectorized (6 Threads)"]
-        Mobile_Storage["GGUF Storage: <code>~/pocket-ai-lab/models/</code><br>qwen2.5-1.5b-instruct-q4_k_m.gguf"]
-        Mobile_Script["Shell Harness: <code>scripts/android_bench.sh</code>"]
+    subgraph Mobile_Target["Edge Mobile Target: realme 9 Pro+ (RMX3392)"]
+        Termux["Termux ARM64 Environment<br>Android 13 / Linux 4.19 Kernel"]
+        LlamaCPP["llama.cpp ARM64 CLI<br>(6 Threads, ARM NEON Vectorized)"]
+        Dimensity["MediaTek Dimensity 920 5G<br>2x A78 (2.5GHz) + 6x A55<br>8GB Unified LPDDR4X"]
+        Termux --> LlamaCPP
+        LlamaCPP --> Dimensity
     end
 
-    CP -->|Validates Loopback| Ollama
-    CP -->|Serves| Static
-    CP -->|Dispatches Jobs| Core_Pipelines
-    Core_Pipelines -->|Samples GPU / RAM| Telemetry
-    Core_Pipelines -->|Writes Telemetry| Storage_Layer
-
-    CP -.->|SSH Subprocess Stream| Mesh
-    Mesh -.->|Port 8022| SSH_Server
-    SSH_Server -->|Spawns with -t 6| Llama_CLI
-    Llama_CLI -->|Reads| Mobile_Storage
-    Mobile_Script -->|Extracts Logs| JSONL
+    Harness -.->|SSH Commands /dev/null| Tunnel
+    Tunnel -.-> Termux
 ```
 
----
+### Hardware Specifications
 
-## 3. Deep-Dive Module Engineering
-
-### 3.1 Zero-Trust Network Perimeter & Loopback Enforcement
-- **Source:** [`src/benchmark.py`](file:///home/abhishek/projects/ai-lab/src/benchmark.py) (`validate_loopback_url`), [`src/control_plane.py`](file:///home/abhishek/projects/ai-lab/src/control_plane.py)
-- **Problem:** Exposing LLM control APIs or Ollama instances to `0.0.0.0` allows unauthenticated network actors to inject prompts, read memory, or exhaust GPU compute.
-- **Implementation:**
-  Every API call is guarded by `validate_loopback_url()`:
-  ```python
-  def validate_loopback_url(url: str) -> None:
-      parsed = urllib.parse.urlparse(url)
-      hostname = parsed.hostname
-      if hostname not in ("127.0.0.1", "localhost", "::1"):
-          raise ValueError(
-              f"SECURITY ERROR: Pocket AI Lab strictly requires loopback binding (127.0.0.1). "
-              f"Attempted connection to external host: {hostname} is blocked."
-          )
-  ```
-  Mutations to the control plane require an `X-Pocket-Token` HTTP header matching `~/.pocket_ai_lab_token` (a 256-bit cryptographically secure token generated via `secrets.token_hex(32)`).
-
----
-
-### 3.2 Telemetry Engine & Hardware Samplers
-- **Source:** [`src/telemetry.py`](file:///home/abhishek/projects/ai-lab/src/telemetry.py)
-- **Problem:** Synchronous telemetry querying freezes inference. Polling too slowly misses transient memory peaks (such as activation memory spikes during prefill).
-- **Implementation:**
-  1. **Asynchronous Non-Blocking GPU Sampler (`GpuPeakSampler`):**
-     Spawns an independent background daemon thread executing every 50ms–100ms. Queries NVML or `nvidia-smi` using low-overhead format strings:
-     `nvidia-smi --query-gpu=memory.used,utilization.gpu,temperature.gpu --format=csv,noheader,nounits`
-     Tracks continuous maximum values for VRAM, GPU Core Utilization %, and Die Temperature °C:
-     ```python
-     with self._lock:
-         if vram > self.peak_vram_mb: self.peak_vram_mb = vram
-         if util > self.peak_gpu_util_pct: self.peak_gpu_util_pct = util
-         if temp > self.peak_gpu_temp_c: self.peak_gpu_temp_c = temp
-     ```
-  2. **System Host Memory Sampling:**
-     Directly parses `/proc/meminfo` on Linux/WSL2 to calculate active vs available physical memory without invoking heavy subprocesses.
-  3. **Android Sysfs Thermal Polling:**
-     Reads `/sys/class/thermal/thermal_zone*/temp` to extract SoC die thermals without requiring Android root privileges.
-
----
-
-### 3.3 Benchmark Evaluation Harness & Latency Accounting
-- **Source:** [`src/benchmark.py`](file:///home/abhishek/projects/ai-lab/src/benchmark.py), [`src/evaluator.py`](file:///home/abhishek/projects/ai-lab/src/evaluator.py)
-- **Problem:** Server-reported timestamps omit socket connection time, chunk buffering, and client serialization delay.
-- **Client-Side Latency Decomposition:**
-  ```
-  Client Requests Generation
-  ├── t_start (perf_counter)
-  │     │
-  │     ├── [Network Socket Connection + Server Model Scheduling]
-  │     ├── [Prompt Tokenization & Prefill Computation]
-  │     │
-  ├── t_first_token  ──>  TTFT = (t_first_token - t_start) * 1000  (ms)
-  │     │
-  │     ├── [Autoregressive Decode Phase: Token 1, 2, ..., N]
-  │     │
-  └── t_end          ──>  E2E = (t_end - t_start) * 1000          (ms)
-  ```
-- **Throughput Calculations:**
-  - **Prompt Prefill Speed (TPS):** $\text{Prefill TPS} = \frac{\text{Prompt Token Count}}{\text{Prompt Eval Duration (sec)}}$
-  - **Autoregressive Generation Speed (TPS):** $\text{Decode TPS} = \frac{\text{Generated Token Count}}{\text{Eval Duration (sec)}}$
-  - **Quality Gates:** Evaluates non-empty output, minimum length thresholds, schema conformity, and forbidden repetition patterns (e.g., infinite n-gram degradation loops).
-
----
-
-### 3.4 Cognitive Reasoning & ALFWorld Embodied Causality
-- **Source:** [`src/reasoning_evaluator.py`](file:///home/abhishek/projects/ai-lab/src/reasoning_evaluator.py)
-- **Scientific Foundation:** Built upon the **Reflexion Taxonomy** (Shinn & Labash et al., 2023).
-- **Benchmark Tasks:**
-  1. **HotpotQA Multi-Hop Cross-Document Retrieval:** Requires the model to synthesize facts from 2–3 disjoint documents while resisting adversarial distractor contexts. Evaluated via fuzzy substring matching and distractor hallucination detection.
-  2. **ALFWorld Sequential Decision-Making:** Simulates interactive text-based embodied environments (e.g. `put a clean sponge on the countertop`).
-- **Failure Decomposition Categories:**
-  - `SUCCESS`: Correct sequential plan or factual answer.
-  - `INVALID_ACTION`: Attempting an affordance violation (e.g. `take soap from drawer` before issuing `open drawer`).
-  - `LOOP_STATE`: Repeating the identical action $\ge 3$ consecutive times without environmental progress.
-  - `HALLUCINATION`: Fabricating facts or referencing objects non-existent in the prompt context.
-
----
-
-### 3.5 Sustained Thermal Equilibrium Stress Testing
-- **Source:** [`src/stress_test.py`](file:///home/abhishek/projects/ai-lab/src/stress_test.py)
-- **Physical Reality:** Mobile GPUs and compact laptop cooling solutions cannot sustain peak boost clocks indefinitely.
-- **Methodology:** Executes $N = 5 \to 20$ consecutive long-generation passes (200 tokens each) with zero cooldown intervals.
-- **Empirical Throttling Finding:**
-  - On the GTX 1650 (Laptop TDP ~50W), the die temperature climbs rapidly:
-    $$\text{Pass 1 (79°C, 79.8 TPS)} \to \text{Pass 5 (82°C, 64.8 TPS)}$$
-  - At **82°C**, NVIDIA mobile boost tables throttle clocks, producing a **-18.83% throughput collapse**.
-  - **Conclusion for Researchers:** Single-pass benchmarks overestimate sustainable edge throughput by nearly 20%.
-
----
-
-### 3.6 Context Window Scaling & KV-Cache Footprint
-- **Source:** [`src/context_scaling_bench.py`](file:///home/abhishek/projects/ai-lab/src/context_scaling_bench.py)
-- **Mathematical Foundations:**
-  1. **Autoregressive KV-Cache Expansion:** For a model with $L$ layers, hidden dimension $D$, and context length $N$:
-     $$\text{KV Memory} \approx 2 \times 2 \times L \times D \times N \times \text{BytesPerParam}$$
-     On `qwen2.5:1.5b` (Q4_K_M with GQA), empirical growth measured at **~20.5 KB per context token**.
-  2. **The Attention Latency Cliff:**
-     - Prefill operations compute the full attention matrix $Q K^T$, scaling with $O(N^2)$.
-     - Between $N = 3,257$ and $N = 4,328$, client-side TTFT jumps from **4.7s to 21.5s (+358%)**.
-     - This occurs when the intermediate activation tensors exceed the GTX 1650's L2 cache (1,024 KB), triggering high-latency VRAM paging.
-
----
-
-### 3.7 On-Device Mobile Execution (Android 13 / Termux ARM64)
-- **Source:** [`scripts/android_bench.sh`](file:///home/abhishek/projects/ai-lab/scripts/android_bench.sh), [`src/run_android_bench.py`](file:///home/abhishek/projects/ai-lab/src/run_android_bench.py)
-- **Device Profile:** realme 9 Pro+ (`RMX3392`), MediaTek Dimensity 920 (`mt6877`).
-- **Core Allocation & Concurrency Optimization:**
-  - The Dimensity 920 features 2x Cortex-A78 big cores (2.5 GHz) + 6x Cortex-A55 efficiency cores (2.0 GHz).
-  - Peak throughput was empirically measured at **6 threads (`-t 6`)**.
-  - Allocating 8 threads causes severe OS scheduling contention with background Android services; allocating 2 threads leaves efficiency compute unused.
-- **Why ARM NEON Vectorized CPU Instead of Vulkan GPU?**
-  In non-rooted Android 13, SELinux policies restrict access to `/vendor/lib64/hw/vulkan.mali.so` from the Termux environment. The ARM NEON CPU backend executes with zero elevated privileges and high numerical precision.
-- **Fast CLI Generation via `llama-completion`:**
-  To support live interactive streaming over SSH, we invoke `llama-completion` with flags:
-  `-m model.gguf -p "prompt" -n 64 -t 6 -no-cnv --no-display-prompt --no-warmup`
-  This streams tokens straight to `stdout` with zero terminal ASCII art or prompt re-echoing.
-
----
-
-### 3.8 Local Control Plane Daemon & Server-Sent Events (SSE) Streaming
-- **Source:** [`src/control_plane.py`](file:///home/abhishek/projects/ai-lab/src/control_plane.py)
-- **Framework:** FastAPI running on Uvicorn, strictly bound to `127.0.0.1:8000`.
-- **Live Playground Endpoint (`POST /api/playground/generate`):**
-  Uses `StreamingResponse(stream_generator(), media_type="text/event-stream")`.
-  - **If `target == "pc"`:** Opens a streaming HTTP connection to `http://127.0.0.1:11434/api/generate` and yields chunks:
-    `data: {"token": "Edge", "done": false}\n\n`
-  - **If `target == "phone"`:** Spawns a background `ssh` subprocess into `100.84.51.84:8022`, reading `stdout` character chunks in real time. Parses stderr on completion for exact on-device timings.
-  - Final SSE payload emits complete benchmark metrics:
-    `data: {"done": true, "ttft_ms": 33.9, "prompt_tps": 354.2, "decode_tps": 46.4, "target": "Host PC"}\n\n`
-
----
-
-### 3.9 Interactive Web Dashboard & Zero-Dependency Static Deployment
-- **Source:** [`web/index.html`](file:///home/abhishek/projects/ai-lab/web/index.html), [`scripts/export_static_site.py`](file:///home/abhishek/projects/ai-lab/scripts/export_static_site.py), [`.github/workflows/deploy_pages.yml`](file:///home/abhishek/projects/ai-lab/.github/workflows/deploy_pages.yml)
-- **Dashboard Architecture:**
-  Pure semantic HTML5, modern vanilla CSS, and lightweight asynchronous JavaScript (zero React/Webpack build step needed).
-- **The 8 Interactive Dashboard Tabs:**
-  1. `⚔️ Hardware Duel`: Real-time head-to-head spec cards & KPI face-off.
-  2. `🏆 Model Leaderboard & Reasoning`: Multi-dimensional scores on HotpotQA, ALFWorld, and memory footprints.
-  3. `🔬 Per-Task Deep Dive`: Side-by-side prompt performance comparison table.
-  4. `💡 Research Insights`: Annotated cards covering the energy inversion, thermal throttling, and embodied causality.
-  5. `📊 Visual Charts Gallery`: 9 high-resolution empirical plots.
-  6. `⚡ Control Plane & Runner`: Authenticated job dispatcher for automated testing.
-  7. `💬 Live Query Playground`: Streaming inference terminal supporting both PC and Phone.
-  8. `📦 Raw Telemetry Explorer`: Filterable historical JSONL log records.
-- **Static Graceful Fallbacks for GitHub Pages:**
-  Every `fetch('/api/...')` call catches errors and falls back to pre-compiled static JSON fixtures in `data/*.json` (e.g. `data/edge_summary.json`), allowing the identical frontend to run either as a local real-time control plane or as a globally hosted public research report.
-
----
-
-## 4. Data Schemas & Storage Hierarchy
-
-### Unified Telemetry Schema (`src/schema.py`)
-Every benchmark execution generates an append-only JSON record:
-```json
-{
-  "schema_version": "1.0.0",
-  "experiment_id": "exp_android_20261029_063432",
-  "run_id": "exp_android_20261029_063432_short_factual_run2",
-  "timestamp_utc": "2026-10-29T06:34:45Z",
-  "source_category": "measured_own_android",
-  "execution_location": "local_android",
-  "host_cpu": "MediaTek Dimensity 920 (mt6877)",
-  "device_model": "RMX3392",
-  "sys_ram_total_mb": 7553,
-  "sys_ram_available_mb": 3135,
-  "model_tag": "qwen2.5:1.5b-q4_k_m",
-  "prompt_id": "short_factual",
-  "run_type": "measured",
-  "prompt_tps": 15.8,
-  "decode_tps": 18.0,
-  "e2e_client_ms": 5330,
-  "status": "success"
-}
-```
-
-### Directory Structure & File Map
-```
-pocket-ai-lab/
-├── .github/workflows/
-│   └── deploy_pages.yml            # Automated GitHub Pages CI/CD
-├── datasets/
-│   ├── prompts_v1.jsonl            # 5 versioned baseline prompts
-│   └── reasoning_eval_v1.jsonl     # HotpotQA & ALFWorld test cases
-├── docs/
-│   ├── developer_guide_architecture.md   # This comprehensive guide
-│   ├── pocket_ai_lab_research_report.md  # Formal empirical research paper
-│   └── x_social_launch_thread.md         # Public launch threads for X/Twitter
-├── results/
-│   ├── charts/                     # Generated 300 DPI research figures (9 total)
-│   ├── *.jsonl                     # Append-only raw run logs
-│   └── *.csv                       # Tabular aggregated summaries
-├── scripts/
-│   ├── android_bench.sh            # On-device Termux benchmarking harness
-│   ├── discover_env.sh             # Phase 0 hardware environment probe
-│   ├── export_static_site.py       # Zero-dependency static packager for dist/
-│   └── generate_extra_charts.py    # Multi-dimensional matplotlib chart generator
-├── src/
-│   ├── auto_eval.py                # Automated multi-model test runner
-│   ├── benchmark.py                # Core streaming benchmark engine
-│   ├── context_scaling_bench.py    # KV-cache & context scaling harness
-│   ├── control_plane.py            # Local authenticated FastAPI server & SSE engine
-│   ├── evaluator.py                # Response quality and schema validator
-│   ├── model_registry.py           # VRAM budget predictor & model ingestion
-│   ├── reasoning_evaluator.py      # HotpotQA & ALFWorld cognitive evaluator
-│   ├── schema.py                   # Pydantic telemetry models
-│   ├── stress_test.py              # Sustained thermal degradation harness
-│   └── telemetry.py                # Non-blocking GPU and host memory samplers
-├── tests/
-│   ├── test_benchmark.py           # Unit tests for benchmark harness
-│   ├── test_context_scaling.py     # Unit tests for context scaling
-│   ├── test_control_plane.py       # Unit tests for FastAPI endpoints
-│   ├── test_reasoning_evaluator.py # Unit tests for cognitive evaluator
-│   └── test_stress_test.py         # Unit tests for thermal stress
-└── web/
-    ├── index.html                  # 8-tab interactive dashboard & playground
-    └── charts/                     # Active web chart assets
-```
-
----
-
-## 5. Developer Runbook & CLI Recipes
-
-### 1. Environment Setup
-```bash
-# Clone and create Python 3.12 virtual environment
-git clone https://github.com/.../pocket-ai-lab.git
-cd pocket-ai-lab
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 2. Run Complete Unit Test Suite
-```bash
-pytest tests/
-# Output: 41 passed in ~4.5s
-```
-
-### 3. Launch Local Authenticated Control Plane
-```bash
-uvicorn src.control_plane:app --host 127.0.0.1 --port 8000
-# Open dashboard in browser: http://127.0.0.1:8000
-```
-
-### 4. Execute Sustained Thermal Stress Test
-```bash
-python3 -m src.stress_test --model qwen2.5:1.5b --iterations 10
-# Generated chart: results/charts/thermal_stress_qwen2_5_1_5b.png
-```
-
-### 5. Execute Context Scaling Benchmark ($N = 256 \to 4,096$)
-```bash
-python3 -m src.context_scaling_bench --model qwen2.5:1.5b --steps 256 512 1024 2048 3072 4096
-# Generated chart: results/charts/context_scaling_qwen2_5_1_5b.png
-```
-
-### 6. Run Cognitive Reasoning Suite (ALFWorld + HotpotQA)
-```bash
-python3 -m src.run_reasoning_benchmark --model qwen2.5:1.5b
-```
-
-### 7. Trigger Remote Benchmark on Phone (via Tailscale SSH)
-```bash
-python3 -m src.run_android_bench --host 100.84.51.84 --port 8022
-# Output: results/exp_android_<timestamp>.jsonl
-```
-
-### 8. Regenerate All 9 Visual Charts & Export Static Site
-```bash
-# Generate high-resolution plots
-python3 scripts/generate_extra_charts.py
-
-# Build zero-dependency distribution bundle in dist/
-python3 scripts/export_static_site.py
-```
-
----
-
-## 6. Troubleshooting & Hardware Edge Cases
-
-| Issue / Symptom | Root Cause | Solution |
+| Specification Metric | Host PC Baseline | Edge Mobile Target |
 | :--- | :--- | :--- |
-| `SECURITY ERROR: Pocket AI Lab strictly requires loopback binding` | An external IP (e.g. `192.168.x.x`) was supplied to `validate_loopback_url`. | Ensure endpoints use `http://127.0.0.1:11434` or `http://localhost:8000`. Remote traffic must pass through SSH tunnels (`ssh -L`). |
-| `llama-cli: waiting for input (> )` | Interactive chat mode was invoked without `--single-turn` or `-no-cnv`. | Use `llama-completion` with `-no-cnv --no-display-prompt --no-warmup`. |
-| Android phone SFTP transfer slow (200 KB/s) | Tailscale TUN encryption overhead on mobile CPU during large single-stream SFTP. | Use `aria2c` directly inside Termux to pull model weights from Hugging Face CDN at 8+ MiB/s. |
-| GPU Throttling (-18% TPS) during Stress Test | Die temperature reached the 82°C NVIDIA mobile limit. | Expected physical behavior. Documented as the sustained thermal ceiling in research report. |
-| Memory Cliff / CUDA OOM on 7B Models | 4GB GDDR6 VRAM limit exceeded (requires ~4.8GB). | Pocket AI Lab enforces an ingestion profile check (`src/model_registry.py`) blocking models $>3.5\text{B}$ params on 4GB GPUs. |
-| `HTTP 401 Unauthorized` on `/api/jobs/*` | Missing or invalid `X-Pocket-Token` header. | Read token from `~/.pocket_ai_lab_token` and supply via header `X-Pocket-Token: <token>`. |
+| **Model / Hardware** | Lenovo IdeaPad Gaming (WSL2) | realme 9 Pro+ 5G (RMX3392) |
+| **Host CPU** | Intel Core i5-10300H (4C/8T @ 4.5 GHz max) | MediaTek Dimensity 920 (2x A78 @ 2.5 GHz + 6x A55 @ 2.0 GHz) |
+| **GPU / Accelerator** | NVIDIA GeForce GTX 1650 (4GB GDDR6, TU117, 896 CUDA Cores) | ARM Mali-G68 MC4 (4 cores) |
+| **System Memory** | 16 GB DDR4 (Dual-channel) | 8 GB Unified LPDDR4X (7,553 MB accessible) |
+| **Usable AI RAM** | 3,800 MB Safe VRAM Limit | ~3,200 MB Safe RAM Buffer (Leaves ~4.3 GB for Android OS) |
+| **Inference Backend** | Ollama v0.34.4 (CUDA cuBLAS) | `llama.cpp` ARM64 CLI (NEON vectorized CPU) |
+| **Power Envelope** | ~50W TDP under full inference load | ~4W TDP under full inference load |
+| **Network Link** | Local Loopback (`127.0.0.1`) | Tailscale WireGuard mesh (`100.84.51.84:8022`) |
+
+---
+
+## 3. Measurement Boundaries & Benchmark Reliability
+
+### 3.1 Latency Accounting: Client TTFT vs Server Prefill vs Decode Time
+Conventional benchmarks report a single "latency" number that conflates network round-trip, engine cold-start model paging, prompt KV prefill, and output decoding. Pocket AI Lab enforces explicit measurement boundaries:
+
+$$\text{Client TTFT} = t_{\text{first\_token\_received}} - t_{\text{request\_sent}}$$
+
+$$\text{Network Overhead} = \text{Client TTFT} - \left(\frac{\text{prompt\_eval\_duration}}{\text{nanoseconds\_to\_ms}} + \frac{\text{load\_duration}}{\text{nanoseconds\_to\_ms}}\right)$$
+
+$$\text{Decode Throughput (TPS)} = \frac{N_{\text{eval\_count}} - 1}{\text{eval\_duration\_sec}}$$
+
+$$\text{Prompt Throughput (TPS)} = \frac{N_{\text{prompt\_eval\_count}}}{\text{prompt\_eval\_duration\_sec}}$$
+
+### 3.2 Ollama KV Cache Hit Invariant & Detection
+In Ollama, identical or overlapping prompt prefixes retain KV cache entries in GPU memory. On warm repeated runs, prompt evaluation time drops from ~300 ms down to $< 10$ ms. If unflagged, this produces misleading calculations of 10,000+ prompt TPS.
+Pocket AI Lab detects this invariant:
+```python
+is_prompt_cache_hit = (
+    prompt_tokens > 5 and
+    prompt_eval_duration_ns > 0 and
+    (prompt_eval_duration_ns / 1_000_000.0) < 10.0
+)
+```
+When `prompt_cache_hit = True`, the benchmark records the hit explicitly in the telemetry ledger to preserve scientific honesty.
+
+### 3.3 Linux Pressure Stall Information (PSI) Monitoring
+To detect whether the operating system is thrashing or dropping pages during edge inference, Pocket AI Lab samples Linux Kernel PSI counters from `/proc/pressure/memory` and `/proc/pressure/cpu`:
+- `some avg10`: Percentage of time in the last 10 seconds during which at least one task was stalled on memory/CPU allocation.
+- `full avg10`: Percentage of time during which all non-idle tasks were stalled simultaneously (imminent OOM condition).
+
+### 3.4 Statistical Rigor: Wilson Score 95% Confidence Intervals
+For small sample sizes (e.g. 10 or 15 trials), reporting raw accuracy (such as "100%" or "0%") introduces statistical bias. Pocket AI Lab computes the **Wilson score interval** with continuity correction for all task success rates:
+
+$$w = \frac{p + \frac{z^2}{2n} \pm z \sqrt{\frac{p(1-p)}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}$$
+
+Where $z = 1.95996$ for a 95% confidence level. For example, a 10/10 score on Python coding is reported as **100% [95% CI: 72.2%, 100.0%]**, communicating true sample uncertainty.
+
+### 3.5 Explicit Run Status & Error Classification
+Every benchmark run is categorized into an explicit `RunStatus`:
+- `SUCCESS`: Normal completion with valid tokens.
+- `TIMEOUT`: Exceeded client timeout threshold.
+- `OOM`: Out-of-memory error detected in process logs or sysfs.
+- `INVALID_OUTPUT`: Non-decodable output, empty response, or model crash.
+- `SCHEMA_VIOLATION`: JSON parse failure or AST syntax failure.
+
+---
+
+## 4. Application-Level AI Evaluators
+
+Pocket AI Lab moves beyond isolated token generation to test models in actionable software workflows via `src/run_application_eval.py`.
+
+### 4.1 Sandboxed Coding Evaluator
+- **AST Syntax Checking:** Validates syntax using Python's `ast.parse()`.
+- **Subprocess Unit Test Sandbox:** Emits a standalone execution script that imports the candidate code and executes test assertions inside an isolated subprocess with a 2.0-second timeout.
+- **Relational SQL Verification:** Uses regular expressions and token analysis to verify mandatory clauses (`SELECT`, `FROM`, `JOIN`, `GROUP BY`, `HAVING`, `WHERE`).
+- **Empirical Result on `qwen2.5-coder:1.5b`:** **10 / 10 passed (100% [72.2%, 100.0%])**.
+
+### 4.2 Structured JSON & Multilingual Extraction
+- **JSON Candidate Extractor:** Extracts JSON blobs from Markdown code fences or free text.
+- **Type Conformance:** Validates types (`int`, `str`, `list`, `dict`) against target schemas.
+- **Strict Negative Controls:** Prohibits unauthorized keys. If the prompt specifies schema `{name, status}`, extra keys like `{"error": ...}` cause immediate test failure.
+- **Multilingual Evaluation:** Tests extraction across English and Devanagari Hindi.
+- **Empirical Finding:** `qwen2.5-coder:1.5b` scored **9 / 10 (90%)**. It failed 1 task due to phonetic transliteration: writing "Jaya Pur" instead of "Jaipur", demonstrating a localized entity boundary in compact models.
+
+### 4.3 Function Tool Calling & False-Positive Prevention
+- Evaluates both positive tool calls (e.g., invoking `get_weather(city="Tokyo")`) and negative controls (conversational queries where calling a tool is a false-positive error).
+- Parses structured tool call JSON and argument schemas.
+
+### 4.4 Dense Semantic Retrieval & Offline RAG (`nomic-embed-text`)
+- **Architecture:** 137M nomic-bert embedding model with 768-dimensional output.
+- **Metrics:** Cosine similarity, Top-1 Recall, Top-5 Recall, Mean Reciprocal Rank (MRR).
+- **Empirical Result:** **100% Recall@1, 100% Recall@5, 1.0 MRR**, requiring only **323.0 MB VRAM** and ~3.0s latency across 15 technical corpus documents.
+- **Takeaway:** Dedicated embedding models are 10x faster and 75% more memory-efficient than using generative LLMs for dense retrieval.
+
+---
+
+## 5. Sustained Mobile Inference & Thermal Analysis
+
+### 5.1 Physical Setup: realme 9 Pro+ & Dimensity 920
+- **SoC:** MediaTek Dimensity 920 5G (TSMC 6nm).
+- **CPU Topology:** 2x Cortex-A78 @ 2.5 GHz (Performance) + 6x Cortex-A55 @ 2.0 GHz (Efficiency).
+- **Execution CLI:** `llama-completion` ARM64 CLI in Termux.
+- **Non-blocking Pipe:** Running with `--single-turn -no-cnv --no-display-prompt --no-warmup < /dev/null` over SSH ensures the process never blocks waiting for interactive stdin.
+
+### 5.2 10-Pass Sustained Workload & Thermal Throttling Curve
+Over 200.4 seconds of continuous token generation on `qwen2.5:1.5b (Q4_K_M)`:
+- **Cold-Start Throughput:** **6.82 TPS**
+- **Peak Warm Throughput:** **7.61 TPS**
+- **Sustained Tail Throughput:** **5.37 TPS**
+- **Measured Degradation:** **29.43% thermal throttling**
+
+As the passive vapor chamber heat pipe saturates, the Android thermal governor scales the Cortex-A78 cores from 2.5 GHz down to lower operating points. Real edge deployments must provision for sustained thermal equilibrium rather than cold burst speeds.
+
+### 5.3 Memory Stability & OOM Freedom
+- **Average RAM Consumed:** 3,878 MB RSS.
+- **Available Headroom:** ~3,100 MB free RAM maintained.
+- **OOM Events:** **0 detected** across 10 sustained iterations.
+
+### 5.4 Measurement Rigor: Battery Delta vs Calibrated Energy
+Battery percentages reported by Android sysfs are coarse secondary state indicators. Pocket AI Lab explicitly disclaims calibrated Joules measurements from battery percentages alone, reporting wall-clock tokens-per-second and memory bytes as our ground-truth metrics.
+
+---
+
+## 6. Deployment Recommendation Engine
+
+The recommendation engine (`src/recommender.py`) answers:
+> *"Can I run this model on my device, and is it suitable for my use case?"*
+
+### 6.1 Headroom Calculation & Resource Modeling
+The engine models memory requirements dynamically:
+
+$$\text{Total Memory} = \text{Model Weights (MB)} + \left(\frac{\text{Context Tokens}}{2048}\right) \times \text{KV Cache Baseline (MB)}$$
+
+$$\text{Headroom (MB)} = \text{Safe Device Budget (MB)} - \text{Total Memory (MB)}$$
+
+Safe hardware budgets enforced:
+- **realme 9 Pro+:** 3,200 MB safe RAM (leaves ~4.3 GB for Android OS, GMS, and UI).
+- **Host PC (GTX 1650):** 3,800 MB safe VRAM (leaves ~296 MB for Windows/WSL display server).
+- **Host PC CPU:** 12,000 MB safe RAM.
+
+### 6.2 Verdict State Machine
+1. `RECOMMENDED` (Green): Memory usage $\le 80\%$, hardware acceleration supported, task score $\ge 70\%$, constraints met.
+2. `PROCEED_WITH_CAUTION` (Orange): Memory usage between $80\%$ and $100\%$, or task suitability warnings (e.g. 0.5B model on multi-step reasoning, or 3B model running on mobile CPU at 2–3 TPS).
+3. `INCOMPATIBLE_OOM_RISK` (Red): Total memory exceeds device safe budget ($\text{Headroom} < 0$).
+
+---
+
+## 7. Local Control Plane & 11-Tab Interactive Dashboard
+
+The authenticated control plane (`src/control_plane.py`) runs on `127.0.0.1:8000` with:
+- `/api/recommend`: Deployment recommendation endpoint.
+- `/api/jobs/evaluate`: Dispatches PC benchmark runs.
+- `/api/jobs/phone-benchmark`: Dispatches mobile runs over Tailscale SSH.
+- `/api/jobs/{id}/cancel`: Cancels active background jobs.
+- `/api/regression/compare`: Computes regression deltas between two runs.
+- `/api/playground/generate`: Real-time Server-Sent Events (SSE) token streaming.
+
+### 11-Tab Dashboard UI (`web/index.html` & `dist/index.html`)
+1. **⚔️ Hardware Duel:** Direct head-to-head metrics comparing GTX 1650 vs Dimensity 920.
+2. **🏆 Model Leaderboard:** Multi-facet filters (scale, family) and side-by-side comparison modal.
+3. **🎯 Deployment Recommender:** Interactive device suitability and memory headroom calculator.
+4. **📱 realme 9 Pro+ Profile:** Hardware spec sheet, sustained thermal benchmark log, and degradation curve.
+5. **🧪 Application AI Evals:** Sandboxed coding (10/10), structured JSON (9/10), and offline retrieval (100%).
+6. **🔬 Per-Task Deep Dive:** Task-by-task prefill and decode breakdown.
+7. **💡 Research Insights:** Scientific explanations of the Energy Inversion, Coder reasoning boost, and thermal limits.
+8. **📊 Visual Charts (10):** All 10 publication-quality charts.
+9. **⚡ Control Plane & Runner:** Mobile-friendly job launcher and status manager.
+10. **💬 Live Query Playground:** Real-time generation streaming interface.
+11. **📦 Raw Telemetry & Data:** Direct downloads for CSVs/JSONLs and complete reproduction commands.
+
+---
+
+## 8. Developer Runbook & Complete CLI Recipes
+
+### 1. Run Complete Unit Test Suite
+```bash
+PYTHONPATH=. .venv/bin/pytest -v
+# Verified: 68 passed in 7.7s
+```
+
+### 2. Run Full PC Benchmark with Telemetry
+```bash
+PYTHONPATH=. .venv/bin/python3 -m src.benchmark --model qwen2.5-coder:1.5b --warmups 1 --repeats 3
+```
+
+### 3. Run Application-Level AI Evaluator Suites
+```bash
+# Coding suite (10 tasks with sandbox execution)
+PYTHONPATH=. .venv/bin/python3 -m src.run_application_eval --suite coding --model qwen2.5-coder:1.5b
+
+# Structured extraction suite (10 tasks with schema validation)
+PYTHONPATH=. .venv/bin/python3 -m src.run_application_eval --suite structured --model qwen2.5-coder:1.5b
+
+# Dense semantic retrieval suite (15 corpus passages)
+PYTHONPATH=. .venv/bin/python3 -m src.run_application_eval --suite retrieval --model nomic-embed-text:latest
+```
+
+### 4. Run Sustained Mobile Benchmark on realme 9 Pro+ Over SSH
+```bash
+PYTHONPATH=. .venv/bin/python3 scripts/sustained_mobile_bench.py --host 100.84.51.84 --port 8022 --passes 10
+```
+
+### 5. Start Local Authenticated Control Plane Daemon
+```bash
+PYTHONPATH=. .venv/bin/uvicorn src.control_plane:app --host 127.0.0.1 --port 8000
+```
+
+### 6. Export Zero-Dependency Static Distribution
+```bash
+PYTHONPATH=. .venv/bin/python3 scripts/export_static_site.py
+```
+
+---
+
+## 9. Troubleshooting & Hardware Edge Cases
+
+| Issue / Symptom | Root Cause | Verified Solution |
+| :--- | :--- | :--- |
+| `SECURITY ERROR: Pocket AI Lab strictly requires loopback binding` | External IP was supplied to `validate_loopback_url`. | Ensure endpoints bind strictly to `127.0.0.1`. Remote traffic must route through SSH tunnels (`ssh -L`). |
+| `llama-completion hanging indefinitely` | Interactive mode waiting for stdin. | Add `--single-turn -no-cnv --no-display-prompt --no-warmup < /dev/null`. |
+| `AttributeError in reasoning_evaluator.py` | `required_treatment` was `None` on task 24. | Guard with `spec.get("required_treatment") and ...`. (Fixed in repository). |
+| `NameError: name 'true' is not defined` | Lowercase boolean emitted into runner code. | Inject `true = True`, `false = False`, `null = None` in Python sandbox template. (Fixed). |
+| Tailscale SSH speed limit during SFTP transfer | Encrypted TUN overhead on mobile CPU. | Use `aria2c` directly inside Termux to download model weights from Hugging Face CDN at 8+ MB/s. |
+| GPU Thermal Throttling (-18.8%) | Die temperature reached the 82°C NVIDIA limit. | Expected physical behavior on laptops; documented in research papers. |
+| Mobile Thermal Throttling (-29.43%) | Passive vapor chamber heat pipe reaches equilibrium. | Expected physical behavior on smartphones; captured in sustained benchmark curve. |

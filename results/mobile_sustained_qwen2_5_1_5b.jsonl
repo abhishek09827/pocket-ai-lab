@@ -1,0 +1,10 @@
+{"iteration": 1, "run_type": "cold_start", "duration_sec": 17.33, "decode_tps": 6.82, "prompt_tps": 7.74, "ram_used_mb": 3910, "ram_available_mb": 3047, "oom_detected": false, "exit_code": 0}
+{"iteration": 2, "run_type": "sustained_warm", "duration_sec": 21.15, "decode_tps": 5.09, "prompt_tps": 6.15, "ram_used_mb": 3877, "ram_available_mb": 3080, "oom_detected": false, "exit_code": 0}
+{"iteration": 3, "run_type": "sustained_warm", "duration_sec": 15.03, "decode_tps": 7.38, "prompt_tps": 10.51, "ram_used_mb": 3877, "ram_available_mb": 3080, "oom_detected": false, "exit_code": 0}
+{"iteration": 4, "run_type": "sustained_warm", "duration_sec": 15.83, "decode_tps": 7.61, "prompt_tps": 10.11, "ram_used_mb": 3901, "ram_available_mb": 3056, "oom_detected": false, "exit_code": 0}
+{"iteration": 5, "run_type": "sustained_warm", "duration_sec": 16.77, "decode_tps": 6.24, "prompt_tps": 10.5, "ram_used_mb": 3936, "ram_available_mb": 3010, "oom_detected": false, "exit_code": 0}
+{"iteration": 6, "run_type": "sustained_warm", "duration_sec": 22.38, "decode_tps": 4.07, "prompt_tps": 9.96, "ram_used_mb": 3904, "ram_available_mb": 3064, "oom_detected": false, "exit_code": 0}
+{"iteration": 7, "run_type": "sustained_warm", "duration_sec": 18.45, "decode_tps": 6.38, "prompt_tps": 6.3, "ram_used_mb": 3906, "ram_available_mb": 3051, "oom_detected": false, "exit_code": 0}
+{"iteration": 8, "run_type": "sustained_warm", "duration_sec": 22.36, "decode_tps": 4.42, "prompt_tps": 9.08, "ram_used_mb": 3872, "ram_available_mb": 3081, "oom_detected": false, "exit_code": 0}
+{"iteration": 9, "run_type": "sustained_warm", "duration_sec": 19.85, "decode_tps": 5.37, "prompt_tps": 6.79, "ram_used_mb": 3836, "ram_available_mb": 3102, "oom_detected": false, "exit_code": 0}
+{"iteration": 10, "run_type": "sustained_warm", "duration_sec": 15.05, "decode_tps": 7.51, "prompt_tps": 10.44, "ram_used_mb": 3811, "ram_available_mb": 3128, "oom_detected": false, "exit_code": 0}

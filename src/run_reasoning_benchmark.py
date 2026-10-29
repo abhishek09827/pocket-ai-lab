@@ -18,7 +18,7 @@ from src.reasoning_evaluator import (
     evaluate_alfworld_response,
     evaluate_hotpotqa_response,
 )
-from src.schema import GenerationConfig, PerformanceMetrics
+from src.schema import GenerationConfig, PerformanceMetrics, compute_wilson_score_interval
 from src.telemetry import GpuPeakSampler, capture_hardware_telemetry
 
 
@@ -195,18 +195,51 @@ def run_reasoning_benchmark(
                 writer.writerow(r)
 
     print(f"\n[Pocket AI Lab] Completed reasoning benchmark for {model}. Output: {csv_path}\n", flush=True)
+
+    # Statistical Summary with Wilson Confidence Intervals
+    measured_runs = [r for r in records if r["run_type"] == "measured"]
+    if measured_runs:
+        hotpot = [r for r in measured_runs if r["benchmark_family"] == "hotpotqa_multihop"]
+        alf = [r for r in measured_runs if r["benchmark_family"] == "alfworld_decision"]
+
+        hp_pass = sum(1 for r in hotpot if r["outcome"] == "SUCCESS")
+        alf_pass = sum(1 for r in alf if r["outcome"] == "SUCCESS")
+
+        hp_rate, hp_low, hp_high = compute_wilson_score_interval(hp_pass, len(hotpot))
+        alf_rate, alf_low, alf_high = compute_wilson_score_interval(alf_pass, len(alf))
+
+        print("=" * 80)
+        print(" REASONING EVALUATION SUMMARY (MEASURED ITERATIONS WITH UNCERTAINTY)")
+        print("=" * 80)
+        print(f"HotpotQA (Multi-Hop Knowledge) : {hp_pass}/{len(hotpot)} ({hp_rate}% | 95% CI: [{hp_low}%, {hp_high}%])")
+        print(f"ALFWorld (Sequential Planning) : {alf_pass}/{len(alf)} ({alf_rate}% | 95% CI: [{alf_low}%, {alf_high}%])")
+        print("-" * 80)
+        print("Failure Modes Breakdown:")
+        for fam_name, subset in [("HotpotQA", hotpot), ("ALFWorld", alf)]:
+            outcomes: Dict[str, int] = {}
+            for r in subset:
+                outcomes[r["outcome"]] = outcomes.get(r["outcome"], 0) + 1
+            breakdown = ", ".join(f"{k}: {v}" for k, v in outcomes.items())
+            print(f"  {fam_name:<10}: {breakdown}")
+        print("=" * 80 + "\n")
+
     return csv_path
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True)
+    parser.add_argument("--dataset", type=str, default="datasets/reasoning_eval_v2.jsonl")
     parser.add_argument("--repeats", type=int, default=2)
     parser.add_argument("--warmups", type=int, default=1)
     args = parser.parse_args()
 
+    # Fallback to v1 if v2 not found
+    ds = args.dataset if os.path.exists(args.dataset) else "datasets/reasoning_eval_v1.jsonl"
+
     run_reasoning_benchmark(
         model=args.model,
+        dataset_path=ds,
         repeats=args.repeats,
         warmups=args.warmups,
     )

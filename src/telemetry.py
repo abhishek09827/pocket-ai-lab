@@ -42,6 +42,32 @@ def get_host_os() -> str:
     return f"{distro} ({platform.system()} {platform.release()} {platform.machine()})"
 
 
+def read_linux_pressure(subsystem: str = "memory") -> Dict[str, Optional[float]]:
+    """Parse Linux Pressure Stall Information (PSI) from /proc/pressure/{subsystem}.
+    
+    Returns 'some_avg10' and 'full_avg10' stall percentages.
+    """
+    path = f"/proc/pressure/{subsystem}"
+    res: Dict[str, Optional[float]] = {"some_avg10": None, "full_avg10": None}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split()
+                if not parts:
+                    continue
+                prefix = parts[0]  # 'some' or 'full'
+                for item in parts[1:]:
+                    if item.startswith("avg10="):
+                        val = float(item.split("=")[1])
+                        if prefix == "some":
+                            res["some_avg10"] = val
+                        elif prefix == "full":
+                            res["full_avg10"] = val
+    except Exception:
+        pass
+    return res
+
+
 def read_nvidia_gpu_stats() -> Dict[str, Optional[Any]]:
     """Query nvidia-smi for instantaneous GPU metrics.
     
@@ -167,6 +193,9 @@ def capture_hardware_telemetry(
     resolved_peak_util = peak_util if peak_util is not None else gpu_stats.get("gpu_util_pct")
     resolved_peak_temp = peak_temp if peak_temp is not None else gpu_stats.get("gpu_temp_c")
 
+    mem_psi = read_linux_pressure("memory")
+    cpu_psi = read_linux_pressure("cpu")
+
     return HardwareTelemetry(
         host_os=get_host_os(),
         host_cpu=get_host_cpu(),
@@ -182,4 +211,7 @@ def capture_hardware_telemetry(
         peak_gpu_vram_used_mb=resolved_peak_vram,
         peak_gpu_util_pct=resolved_peak_util,
         peak_gpu_temp_c=resolved_peak_temp,
+        memory_pressure_psi_some_pct=mem_psi.get("some_avg10"),
+        memory_pressure_psi_full_pct=mem_psi.get("full_avg10"),
+        cpu_pressure_psi_some_pct=cpu_psi.get("some_avg10"),
     )

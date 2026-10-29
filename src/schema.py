@@ -28,6 +28,10 @@ RunStatus = Literal[
     "success",
     "error",
     "skipped",
+    "timeout",
+    "oom",
+    "invalid_output",
+    "schema_violation",
 ]
 
 
@@ -49,6 +53,10 @@ class HardwareTelemetry(BaseModel):
     peak_gpu_vram_used_mb: Optional[float] = None
     peak_gpu_util_pct: Optional[float] = None
     peak_gpu_temp_c: Optional[float] = None
+    # Linux Pressure Stall Information (PSI)
+    memory_pressure_psi_some_pct: Optional[float] = Field(None, description="Memory pressure stall percentage (some avg10)")
+    memory_pressure_psi_full_pct: Optional[float] = Field(None, description="Memory pressure stall percentage (full avg10)")
+    cpu_pressure_psi_some_pct: Optional[float] = Field(None, description="CPU pressure stall percentage (some avg10)")
 
 
 class ModelIdentity(BaseModel):
@@ -88,6 +96,10 @@ class PerformanceMetrics(BaseModel):
     response_tokens: Optional[int] = None
     decode_duration_ms: Optional[float] = None
     decode_tps: Optional[float] = None
+    # Measurement boundaries and caching detection
+    prompt_cache_hit: Optional[bool] = Field(False, description="True if prompt KV cache prefix was hit in runtime")
+    server_total_duration_ms: Optional[float] = Field(None, description="Total duration reported by backend server")
+    network_overhead_ms: Optional[float] = Field(None, description="Client TTFT minus server prompt prefill and load time")
 
 
 class QualityEvaluation(BaseModel):
@@ -149,6 +161,9 @@ class BenchmarkRecord(BaseModel):
             "peak_gpu_vram_used_mb": self.hardware.peak_gpu_vram_used_mb,
             "peak_gpu_util_pct": self.hardware.peak_gpu_util_pct,
             "peak_gpu_temp_c": self.hardware.peak_gpu_temp_c,
+            "memory_pressure_psi_some_pct": self.hardware.memory_pressure_psi_some_pct,
+            "memory_pressure_psi_full_pct": self.hardware.memory_pressure_psi_full_pct,
+            "cpu_pressure_psi_some_pct": self.hardware.cpu_pressure_psi_some_pct,
             # Model
             "model_tag": self.model.model_tag,
             "digest_sha256": self.model.digest_sha256,
@@ -173,6 +188,9 @@ class BenchmarkRecord(BaseModel):
             "response_tokens": self.metrics.response_tokens,
             "decode_duration_ms": self.metrics.decode_duration_ms,
             "decode_tps": self.metrics.decode_tps,
+            "prompt_cache_hit": self.metrics.prompt_cache_hit,
+            "server_total_duration_ms": self.metrics.server_total_duration_ms,
+            "network_overhead_ms": self.metrics.network_overhead_ms,
             # Quality
             "prompt_id": self.quality.prompt_id,
             "category": self.quality.category,
@@ -180,3 +198,31 @@ class BenchmarkRecord(BaseModel):
             "quality_notes": self.quality.quality_notes,
             "response_text_len": len(self.quality.response_text),
         }
+
+
+def compute_wilson_score_interval(
+    successes: int,
+    total: int,
+    confidence: float = 0.95,
+) -> Tuple[float, float, float]:
+    """Calculate the Wilson score confidence interval for a binomial proportion.
+    
+    Prevents over-claiming general capability from small sample sizes (e.g. 5 prompts).
+    Returns (center, lower_bound_pct, upper_bound_pct).
+    """
+    import math
+
+    if total == 0:
+        return 0.0, 0.0, 0.0
+
+    # z value for two-sided confidence (95% -> 1.95996)
+    z = 1.95996 if abs(confidence - 0.95) < 0.01 else 1.64485
+    p_hat = successes / total
+    denom = 1.0 + (z**2) / total
+    center = (p_hat + (z**2) / (2.0 * total)) / denom
+    margin = (z / denom) * math.sqrt((p_hat * (1.0 - p_hat) / total) + ((z**2) / (4.0 * (total**2))))
+
+    lower = max(0.0, center - margin)
+    upper = min(1.0, center + margin)
+
+    return round(p_hat * 100.0, 1), round(lower * 100.0, 1), round(upper * 100.0, 1)

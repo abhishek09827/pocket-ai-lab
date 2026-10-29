@@ -1,0 +1,231 @@
+{
+  "structured": {
+    "suite": "structured",
+    "model": "qwen2.5-coder:1.5b",
+    "total_tasks": 10,
+    "passed_tasks": 9,
+    "pass_rate_pct": 90.0,
+    "ci_95_low_pct": 59.6,
+    "ci_95_high_pct": 98.2,
+    "records": [
+      {
+        "task_id": "struct_01",
+        "category": "json_schema",
+        "passed": true,
+        "notes": "Schema valid and all constraints satisfied",
+        "duration_ms": 1596.0,
+        "response_text": "```json\n{\n  \"name\": \"Sarah Connor\",\n  \"age\": 34,\n  \"skills\": [\"Python\", \"Rust\", \"Docker\"],\n  \"employed\": true\n}\n```",
+        "details": {
+          "parsed_data": {
+            "name": "Sarah Connor",
+            "age": 34,
+            "skills": [
+              "Python",
+              "Rust",
+              "Docker"
+            ],
+            "employed": true
+          },
+          "matched_keys": [
+            "name",
+            "age",
+            "skills",
+            "employed"
+          ]
+        }
+      },
+      {
+        "task_id": "struct_02",
+        "category": "json_schema",
+        "passed": true,
+        "notes": "Schema valid and all constraints satisfied",
+        "duration_ms": 1621.96,
+        "response_text": "```json\n{\n  \"hostname\": \"edge-gateway-01\",\n  \"cpu_percent\": 14.8,\n  \"memory_used_mb\": 1024,\n  \"services\": [\"nginx\", \"redis\"]\n}\n```",
+        "details": {
+          "parsed_data": {
+            "hostname": "edge-gateway-01",
+            "cpu_percent": 14.8,
+            "memory_used_mb": 1024,
+            "services": [
+              "nginx",
+              "redis"
+            ]
+          },
+          "matched_keys": [
+            "hostname",
+            "cpu_percent",
+            "memory_used_mb",
+            "services"
+          ]
+        }
+      },
+      {
+        "task_id": "struct_03",
+        "category": "json_schema",
+        "passed": true,
+        "notes": "Schema valid and all constraints satisfied",
+        "duration_ms": 1530.84,
+        "response_text": "```json\n{\n  \"invoice_id\": \"INV-2026-991\",\n  \"total\": 450.75,\n  \"currency\": \"USD\",\n  \"items_count\": 3\n}\n```",
+        "details": {
+          "parsed_data": {
+            "invoice_id": "INV-2026-991",
+            "total": 450.75,
+            "currency": "USD",
+            "items_count": 3
+          },
+          "matched_keys": [
+            "invoice_id",
+            "total",
+            "currency",
+            "items_count"
+          ]
+        }
+      },
+      {
+        "task_id": "struct_04",
+        "category": "json_schema",
+        "passed": true,
+        "notes": "Schema valid and all constraints satisfied",
+        "duration_ms": 1642.51,
+        "response_text": "```json\n{\n  \"patient_id\": \"P-402\",\n  \"date\": \"2026-11-04\",\n  \"doctor\": \"Dr. Aris Thorne\",\n  \"urgent\": false\n}\n```",
+        "details": {
+          "parsed_data": {
+            "patient_id": "P-402",
+            "date": "2026-11-04",
+            "doctor": "Dr. Aris Thorne",
+            "urgent": false
+          },
+          "matched_keys": [
+            "patient_id",
+            "date",
+            "doctor",
+            "urgent"
+          ]
+        }
+      },
+      {
+        "task_id": "struct_05_neg",
+        "category": "negative_control_schema",
+        "passed": true,
+        "notes": "Schema valid and all constraints satisfied",
+        "duration_ms": 1208.48,
+        "response_text": "```json\n{\n  \"flight_num\": \"AI-302\",\n  \"origin\": \"Delhi\",\n  \"destination\": \"London\"\n}\n```",
+        "details": {
+          "parsed_data": {
+            "flight_num": "AI-302",
+            "origin": "Delhi",
+            "destination": "London"
+          },
+          "matched_keys": [
+            "flight_num",
+            "origin",
+            "destination"
+          ]
+        }
+      },
+      {
+        "task_id": "struct_06_neg",
+        "category": "negative_control_schema",
+        "passed": true,
+        "notes": "Schema valid and all constraints satisfied",
+        "duration_ms": 1131.1,
+        "response_text": "```json\n{\n  \"title\": \"Dune\",\n  \"author\": \"Frank Herbert\",\n  \"year\": 1965\n}\n```",
+        "details": {
+          "parsed_data": {
+            "title": "Dune",
+            "author": "Frank Herbert",
+            "year": 1965
+          },
+          "matched_keys": [
+            "title",
+            "author",
+            "year"
+          ]
+        }
+      },
+      {
+        "task_id": "struct_07_hi_en",
+        "category": "multilingual_hi_en",
+        "passed": false,
+        "notes": "Value mismatch: Key 'city_name': expected 'Jaipur', got 'Jaya Pur'",
+        "duration_ms": 2584.09,
+        "response_text": "```json\n{\n  \"city_name\": \"Jaya Pur\",\n  \"state\": \"Rajasthan\",\n  \"population_lakh\": 30,\n  \"famous_for\": \"It is the capital city of Rajasthan and is known for its rich history and cultural heritage. It is also famous for its beautiful gardens and lakes. \"\n}\n```",
+        "details": {
+          "value_mismatches": [
+            "Key 'city_name': expected 'Jaipur', got 'Jaya Pur'"
+          ],
+          "parsed_data": {
+            "city_name": "Jaya Pur",
+            "state": "Rajasthan",
+            "population_lakh": 30,
+            "famous_for": "It is the capital city of Rajasthan and is known for its rich history and cultural heritage. It is also famous for its beautiful gardens and lakes. "
+          }
+        }
+      },
+      {
+        "task_id": "struct_08_hi_en",
+        "category": "multilingual_hi_en",
+        "passed": true,
+        "notes": "Schema valid and all constraints satisfied",
+        "duration_ms": 1827.64,
+        "response_text": "```json\n{\n  \"customer_name\": \"Rahul Sharma\",\n  \"order_id\": \"98721\",\n  \"issue_type\": \"urgent\",\n  \"urgent\": true\n}\n```",
+        "details": {
+          "parsed_data": {
+            "customer_name": "Rahul Sharma",
+            "order_id": "98721",
+            "issue_type": "urgent",
+            "urgent": true
+          },
+          "matched_keys": [
+            "customer_name",
+            "order_id",
+            "issue_type",
+            "urgent"
+          ]
+        }
+      },
+      {
+        "task_id": "struct_09_hi_en",
+        "category": "multilingual_hi_en",
+        "passed": true,
+        "notes": "Schema valid and all constraints satisfied",
+        "duration_ms": 1345.86,
+        "response_text": "```json\n{\n  \"item\": \"laptop\",\n  \"quantity\": 5,\n  \"destination\": \"Mumbai office\",\n  \"payment_mode\": \"cash on delivery\"\n}\n```",
+        "details": {
+          "parsed_data": {
+            "item": "laptop",
+            "quantity": 5,
+            "destination": "Mumbai office",
+            "payment_mode": "cash on delivery"
+          },
+          "matched_keys": [
+            "item",
+            "quantity",
+            "destination",
+            "payment_mode"
+          ]
+        }
+      },
+      {
+        "task_id": "struct_10_hi_en",
+        "category": "multilingual_hi_en",
+        "passed": true,
+        "notes": "Schema valid and all constraints satisfied",
+        "duration_ms": 1458.16,
+        "response_text": "```json\n{\n  \"dish_name\": \"Hyderabadi Biryani\",\n  \"main_ingredient_hi\": \"\u091a\u093e\u0935\u0932\",\n  \"origin_state\": \"Telangana\"\n}\n```",
+        "details": {
+          "parsed_data": {
+            "dish_name": "Hyderabadi Biryani",
+            "main_ingredient_hi": "\u091a\u093e\u0935\u0932",
+            "origin_state": "Telangana"
+          },
+          "matched_keys": [
+            "dish_name",
+            "main_ingredient_hi",
+            "origin_state"
+          ]
+        }
+      }
+    ]
+  }
+}

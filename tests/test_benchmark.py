@@ -11,8 +11,14 @@ from src.schema import (
     ModelIdentity,
     PerformanceMetrics,
     QualityEvaluation,
+    compute_wilson_score_interval,
 )
-from src.telemetry import capture_hardware_telemetry, get_host_cpu, get_host_os
+from src.telemetry import (
+    capture_hardware_telemetry,
+    get_host_cpu,
+    get_host_os,
+    read_linux_pressure,
+)
 
 
 class TestLoopbackSecurity:
@@ -240,4 +246,40 @@ class TestTelemetryAndStats:
         assert stats["mean"] == 30.0
         assert stats["median"] == 30.0
         assert stats["p90"] == 50.0
+        assert stats["min"] == 10.0
+        assert stats["max"] == 50.0
         assert stats["stdev"] == pytest.approx(15.81, rel=1e-2)
+
+    def test_wilson_confidence_intervals(self):
+        # 5 out of 5 successes should show uncertainty, not a blanket 100%
+        center, low, high = compute_wilson_score_interval(5, 5, confidence=0.95)
+        assert center == 100.0
+        assert low < 100.0  # Wilson interval properly reports lower bound for n=5
+        assert high == 100.0
+
+        # 0 out of 5
+        center, low, high = compute_wilson_score_interval(0, 5, confidence=0.95)
+        assert center == 0.0
+        assert low == 0.0
+        assert high > 0.0  # Upper bound accounts for small sample uncertainty
+
+        # Zero sample safety
+        assert compute_wilson_score_interval(0, 0) == (0.0, 0.0, 0.0)
+
+    def test_linux_pressure_stall_info(self):
+        mem_psi = read_linux_pressure("memory")
+        assert isinstance(mem_psi, dict)
+        assert "some_avg10" in mem_psi
+
+    def test_metrics_cache_hit_and_network_overhead(self):
+        metrics = PerformanceMetrics(
+            ttft_client_ms=45.0,
+            prompt_eval_duration_ms=4.0,
+            load_duration_ms=1.0,
+            prompt_tokens=150,
+            prompt_cache_hit=True,
+            server_total_duration_ms=350.0,
+            network_overhead_ms=40.0,
+        )
+        assert metrics.prompt_cache_hit is True
+        assert metrics.network_overhead_ms == 40.0

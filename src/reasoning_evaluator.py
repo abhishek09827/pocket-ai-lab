@@ -117,7 +117,8 @@ def evaluate_alfworld_response(
     hallucinated_targets = [h.lower() for h in spec.get("hallucinated_targets", [])]
     target_object = spec.get("target_object", "").lower()
     target_receptacle = spec.get("target_receptacle", "").lower()
-    required_treatment = spec.get("required_treatment", "").lower()
+    raw_treatment = spec.get("required_treatment")
+    required_treatment = raw_treatment.lower() if raw_treatment else ""
     optimal_range = spec.get("optimal_step_range", [5, 10])
 
     # 1. Check for Hallucinations (referencing objects/receptacles not present in the room)

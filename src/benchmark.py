@@ -23,8 +23,10 @@ from src.schema import (
     ModelIdentity,
     PerformanceMetrics,
     QualityEvaluation,
+    RunStatus,
     RunType,
     SourceCategory,
+    compute_wilson_score_interval,
 )
 from src.telemetry import GpuPeakSampler, capture_hardware_telemetry
 
@@ -198,11 +200,26 @@ def run_single_inference(
     def ns_to_ms(val: Optional[int]) -> Optional[float]:
         return round(val / 1e6, 2) if val is not None else None
 
+    server_total_duration_ms = ns_to_ms(final_data.get("total_duration"))
     load_duration_ms = ns_to_ms(final_data.get("load_duration"))
     prompt_tokens = final_data.get("prompt_eval_count")
     prompt_eval_duration_ms = ns_to_ms(final_data.get("prompt_eval_duration"))
     response_tokens = final_data.get("eval_count")
     decode_duration_ms = ns_to_ms(final_data.get("eval_duration"))
+
+    # Prompt Cache Hit Detection:
+    # When Ollama reuses KV prompt prefixes, prompt_eval_duration drops to ~0ms even for long prompts.
+    # We identify cache hits explicitly so low TTFT is not misattributed to raw prefill throughput.
+    prompt_cache_hit = False
+    if prompt_tokens and prompt_tokens > 5 and prompt_eval_duration_ms is not None:
+        if prompt_eval_duration_ms < 10.0:
+            prompt_cache_hit = True
+
+    # Network / socket scheduling overhead: client-observed TTFT minus engine prompt evaluation + model loading
+    network_overhead_ms: Optional[float] = None
+    if ttft_client_ms is not None and prompt_eval_duration_ms is not None:
+        server_prefill_and_load = prompt_eval_duration_ms + (load_duration_ms or 0.0)
+        network_overhead_ms = round(max(0.0, ttft_client_ms - server_prefill_and_load), 2)
 
     prompt_tps: Optional[float] = None
     if prompt_tokens is not None and prompt_eval_duration_ms and prompt_eval_duration_ms > 0:
@@ -222,6 +239,9 @@ def run_single_inference(
         response_tokens=response_tokens,
         decode_duration_ms=decode_duration_ms,
         decode_tps=decode_tps,
+        prompt_cache_hit=prompt_cache_hit,
+        server_total_duration_ms=server_total_duration_ms,
+        network_overhead_ms=network_overhead_ms,
     )
 
     return full_response, metrics, peak_gpu
@@ -248,9 +268,9 @@ def append_record_to_csv(record: BenchmarkRecord, path: str) -> None:
 
 
 def compute_stats(values: List[float]) -> Dict[str, float]:
-    """Compute mean, median, p90, and sample stdev."""
+    """Compute mean, median, p90, min, max, and sample stdev."""
     if not values:
-        return {"mean": 0.0, "median": 0.0, "p90": 0.0, "stdev": 0.0}
+        return {"mean": 0.0, "median": 0.0, "p90": 0.0, "stdev": 0.0, "min": 0.0, "max": 0.0}
     sorted_v = sorted(values)
     n = len(sorted_v)
     mean_v = sum(sorted_v) / n
@@ -275,6 +295,8 @@ def compute_stats(values: List[float]) -> Dict[str, float]:
         "median": round(median_v, 2),
         "p90": round(p90_v, 2),
         "stdev": round(stdev_v, 2),
+        "min": round(sorted_v[0], 2),
+        "max": round(sorted_v[-1], 2),
     }
 
 
@@ -290,22 +312,22 @@ def print_summary_table(records: List[BenchmarkRecord]) -> None:
     decode_tps_vals = [r.metrics.decode_tps for r in measured if r.metrics.decode_tps is not None]
     vram_vals = [r.hardware.peak_gpu_vram_used_mb for r in measured if r.hardware.peak_gpu_vram_used_mb is not None]
     passed_count = sum(1 for r in measured if r.quality.quality_passed)
-    pass_rate = round((passed_count / len(measured)) * 100.0, 1)
+    pass_rate, ci_low, ci_high = compute_wilson_score_interval(passed_count, len(measured))
 
     s_ttft = compute_stats(ttft_vals)
     s_prompt_tps = compute_stats(prompt_tps_vals)
     s_decode_tps = compute_stats(decode_tps_vals)
     s_vram = compute_stats(vram_vals)
 
-    print("\n" + "=" * 80)
+    print("\n" + "=" * 90)
     print(" POCKET AI LAB — BENCHMARK RESULTS SUMMARY (MEASURED RUNS)")
-    print("=" * 80)
+    print("=" * 90)
     print(f"Total Measured Iterations : {len(measured)}")
-    print(f"Quality Pass Rate          : {passed_count}/{len(measured)} ({pass_rate}%)")
-    print("-" * 80)
-    header = f"{'Metric':<25} | {'Mean':>10} | {'Median':>10} | {'P90':>10} | {'Stdev':>10}"
+    print(f"Quality Pass Rate          : {passed_count}/{len(measured)} ({pass_rate}% | 95% CI: [{ci_low}%, {ci_high}%])")
+    print("-" * 90)
+    header = f"{'Metric':<24} | {'Mean':>9} | {'Median':>9} | {'P90':>9} | {'Min':>8} | {'Max':>8} | {'Stdev':>8}"
     print(header)
-    print("-" * 80)
+    print("-" * 90)
 
     rows = [
         ("TTFT (client ms)", s_ttft),
@@ -315,8 +337,8 @@ def print_summary_table(records: List[BenchmarkRecord]) -> None:
     ]
 
     for label, stat in rows:
-        print(f"{label:<25} | {stat['mean']:>10.2f} | {stat['median']:>10.2f} | {stat['p90']:>10.2f} | {stat['stdev']:>10.2f}")
-    print("=" * 80 + "\n")
+        print(f"{label:<24} | {stat['mean']:>9.2f} | {stat['median']:>9.2f} | {stat['p90']:>9.2f} | {stat['min']:>8.2f} | {stat['max']:>8.2f} | {stat['stdev']:>8.2f}")
+    print("=" * 90 + "\n")
 
 
 def run_benchmark(
@@ -419,6 +441,10 @@ def run_benchmark(
                     response_text=response_text,
                 )
 
+                status_val: RunStatus = "success"
+                if not response_text or len(response_text.strip()) == 0:
+                    status_val = "invalid_output"
+
                 record = BenchmarkRecord(
                     schema_version="1.0.0",
                     experiment_id=experiment_id,
@@ -432,20 +458,29 @@ def run_benchmark(
                     generation=gen_config,
                     metrics=metrics,
                     quality=quality,
-                    status="success",
+                    status=status_val,
                 )
 
                 status_mark = "✔ PASS" if passed else "✘ FAIL"
+                cache_tag = " [CACHE HIT]" if metrics.prompt_cache_hit else ""
                 print(
                     f"    iter {iter_num}/{total_iterations} ({run_type:<10}): "
-                    f"TTFT={metrics.ttft_client_ms}ms | Prompt={metrics.prompt_tps} TPS | "
+                    f"TTFT={metrics.ttft_client_ms}ms{cache_tag} | Prompt={metrics.prompt_tps} TPS | "
                     f"Decode={metrics.decode_tps} TPS | VRAM={hardware_telem.peak_gpu_vram_used_mb}MB | "
                     f"Quality: {status_mark}",
                     flush=True,
                 )
 
             except Exception as exc:
-                print(f"    iter {iter_num}/{total_iterations} ({run_type:<10}): ERROR: {exc}", flush=True)
+                err_str = str(exc)
+                if isinstance(exc, requests.exceptions.Timeout) or "timed out" in err_str.lower():
+                    status_val = "timeout"
+                elif "out of memory" in err_str.lower() or "cuda out of memory" in err_str.lower() or "oom" in err_str.lower():
+                    status_val = "oom"
+                else:
+                    status_val = "error"
+
+                print(f"    iter {iter_num}/{total_iterations} ({run_type:<10}): {status_val.upper()}: {err_str}", flush=True)
                 hardware_telem = capture_hardware_telemetry()
                 record = BenchmarkRecord(
                     schema_version="1.0.0",
@@ -463,11 +498,11 @@ def run_benchmark(
                         prompt_id=prompt_id,
                         category=category,
                         quality_passed=False,
-                        quality_notes=str(exc),
+                        quality_notes=err_str,
                         response_text="",
                     ),
-                    status="error",
-                    error_message=str(exc),
+                    status=status_val,
+                    error_message=err_str,
                 )
 
             append_record_to_jsonl(record, jsonl_path)

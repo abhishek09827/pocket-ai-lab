@@ -1,0 +1,153 @@
+{
+  "coding": {
+    "suite": "coding",
+    "model": "qwen2.5-coder:1.5b",
+    "total_tasks": 10,
+    "passed_tasks": 9,
+    "pass_rate_pct": 90.0,
+    "ci_95_low_pct": 59.6,
+    "ci_95_high_pct": 98.2,
+    "records": [
+      {
+        "task_id": "code_algo_01",
+        "category": "algorithm",
+        "passed": true,
+        "notes": "All 4 unit tests passed",
+        "duration_ms": 6152.88,
+        "response_text": "```python\ndef fibonacci(n: int) -> int:\n    if n == 0:\n        return 0\n    elif n == 1:\n        return 1\n    else:\n        a, b = 0, 1\n        for _ in range(2, n + 1):\n            a, b = b, a + b\n        return b\n```",
+        "details": {
+          "passed_tests": 4,
+          "total_tests": 4
+        }
+      },
+      {
+        "task_id": "code_algo_02",
+        "category": "algorithm",
+        "passed": false,
+        "notes": "Test failure: NameError: name 'true' is not defined. Did you mean: 'True'?",
+        "duration_ms": 2015.21,
+        "response_text": "```python\ndef is_palindrome(s: str) -> bool:\n    # Normalize the string by removing non-alphanumeric characters and converting to lowercase\n    normalized_s = ''.join(char.lower() for char in s if char.isalnum())\n    \n    # Check if the normalized string is equal to its reverse\n    return normalized_s == normalized_s[::-1]\n```",
+        "details": {
+          "passed_tests": 0,
+          "total_tests": 4
+        }
+      },
+      {
+        "task_id": "code_algo_03",
+        "category": "algorithm",
+        "passed": true,
+        "notes": "All 3 unit tests passed",
+        "duration_ms": 5521.9,
+        "response_text": "```python\ndef merge_intervals(intervals: list[list[int]]) -> list[list[int]]:\n    # Sort intervals based on their start time\n    intervals.sort(key=lambda x: x[0])\n    \n    merged = []\n    current_interval = intervals[0]\n    \n    for interval in intervals[1:]:\n        # If the current interval and the next interval overlap, merge them\n        if current_interval[1] >= interval[0]:\n            current_interval[1] = max(current_interval[1], interval[1])\n        else:\n            # If they don't overlap, add the current interval to the merged list\n            merged.append(current_interval)\n            current_interval = interval\n    \n    # Add the last interval to the merged list\n    merged.append(current_interval)\n    \n    return merged\n```\n\nThis function first sorts the intervals based on their start time. It then iterates through the sorted intervals, merging overlapping intervals and adding the non-overlapping intervals to the `merged` list. Finally, it returns the `merged` list of non-overlapping intervals.",
+        "details": {
+          "passed_tests": 3,
+          "total_tests": 3
+        }
+      },
+      {
+        "task_id": "code_algo_04",
+        "category": "algorithm",
+        "passed": true,
+        "notes": "All 3 unit tests passed",
+        "duration_ms": 2650.18,
+        "response_text": "```python\ndef binary_search(arr: list[int], target: int) -> int:\n    left, right = 0, len(arr) - 1\n\n    while left <= right:\n        mid = (left + right) // 2\n\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n\n    return -1\n```",
+        "details": {
+          "passed_tests": 3,
+          "total_tests": 3
+        }
+      },
+      {
+        "task_id": "code_bugfix_01",
+        "category": "bug_fix",
+        "passed": true,
+        "notes": "All 3 unit tests passed",
+        "duration_ms": 3628.53,
+        "response_text": "The bug in the function is that it does not check the last element of the list. To fix this, we need to add a check for the last element in the loop. Here's the corrected function:\n\n```python\ndef find_max(nums: list[int]) -> int:\n    if not nums:\n        raise ValueError('Empty list')\n    max_val = nums[0]\n    for i in range(1, len(nums)):\n        if nums[i] > max_val:\n            max_val = nums[i]\n    return max_val\n```\n\nThis function will now correctly find the maximum value in the list, including the last element.",
+        "details": {
+          "passed_tests": 3,
+          "total_tests": 3
+        }
+      },
+      {
+        "task_id": "code_bugfix_02",
+        "category": "bug_fix",
+        "passed": true,
+        "notes": "All 3 unit tests passed",
+        "duration_ms": 3089.83,
+        "response_text": "Here is the corrected function:\n\n```python\ndef get_user_role(users: dict, user_id: str) -> str:\n    if user_id in users and 'role' in users[user_id]:\n        return users[user_id]['role']\n    else:\n        return 'guest'\n```\n\nThis function first checks if the user_id exists in the users dictionary and if the 'role' key exists in the user's dictionary. If both conditions are true, it returns the user's role. If either condition is false, it returns 'guest'.",
+        "details": {
+          "passed_tests": 3,
+          "total_tests": 3
+        }
+      },
+      {
+        "task_id": "code_bugfix_03",
+        "category": "bug_fix",
+        "passed": true,
+        "notes": "All 3 unit tests passed",
+        "duration_ms": 3184.6,
+        "response_text": "Here is the corrected function:\n\n```python\ndef calculate_average(scores: list[float]) -> float:\n    if not scores:\n        return 0.0\n    return round(sum(scores) / len(scores), 2)\n```\n\nThis function first checks if the list of scores is empty. If it is, it returns 0.0. If the list is not empty, it calculates the average by summing all the scores and dividing by the number of scores. The result is then rounded to 2 decimal places using the `round()` function.",
+        "details": {
+          "passed_tests": 3,
+          "total_tests": 3
+        }
+      },
+      {
+        "task_id": "code_sql_01",
+        "category": "sql",
+        "passed": true,
+        "notes": "Valid SQL query structure with all required clauses",
+        "duration_ms": 1379.92,
+        "response_text": "```sql\nSELECT c.name\nFROM customers c\nJOIN orders o ON c.id = o.customer_id\nGROUP BY c.id, c.name\nORDER BY SUM(o.amount) DESC\nLIMIT 3;\n```",
+        "details": {
+          "missing_tokens": [],
+          "matched_tokens": [
+            "SELECT",
+            "FROM",
+            "JOIN",
+            "GROUP BY",
+            "ORDER BY",
+            "DESC",
+            "LIMIT"
+          ]
+        }
+      },
+      {
+        "task_id": "code_sql_02",
+        "category": "sql",
+        "passed": true,
+        "notes": "Valid SQL query structure with all required clauses",
+        "duration_ms": 2006.57,
+        "response_text": "```sql\nSELECT \n    d.department_name,\n    COUNT(e.id) AS employee_count,\n    AVG(e.salary) AS average_salary\nFROM \n    employees e\nJOIN \n    departments d ON e.department_id = d.id\nGROUP BY \n    d.department_name\nHAVING \n    COUNT(e.id) > 5;\n```",
+        "details": {
+          "missing_tokens": [],
+          "matched_tokens": [
+            "SELECT",
+            "COUNT",
+            "AVG",
+            "JOIN",
+            "GROUP BY",
+            "HAVING"
+          ]
+        }
+      },
+      {
+        "task_id": "code_sql_03",
+        "category": "sql",
+        "passed": true,
+        "notes": "Valid SQL query structure with all required clauses",
+        "duration_ms": 987.27,
+        "response_text": "```sql\nSELECT email\nFROM users\nWHERE status = 'active'\nAND last_login_date < CURRENT_DATE - INTERVAL 30 DAY;\n```",
+        "details": {
+          "missing_tokens": [],
+          "matched_tokens": [
+            "SELECT",
+            "FROM",
+            "WHERE",
+            "active"
+          ]
+        }
+      }
+    ]
+  }
+}

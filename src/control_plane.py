@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from src.model_registry import discover_available_models, profile_model_fit, list_registry
+from src.recommender import DeploymentTarget, evaluate_deployment_recommendation
 from src.telemetry import capture_hardware_telemetry
 
 
@@ -246,6 +247,95 @@ def get_job_status(job_id: str) -> Dict[str, Any]:
         if job_id not in JOBS_STORE:
             raise HTTPException(status_code=404, detail="Job not found")
         return JOBS_STORE[job_id]
+
+
+@app.post("/api/jobs/{job_id}/cancel")
+def cancel_job(
+    job_id: str,
+    _token: str = Depends(verify_token),
+) -> Dict[str, Any]:
+    """Cancel an active or queued job. Requires X-Pocket-Token authentication."""
+    with jobs_lock:
+        if job_id not in JOBS_STORE:
+            raise HTTPException(status_code=404, detail="Job not found")
+        job = JOBS_STORE[job_id]
+        if job["status"] in ["completed", "failed", "cancelled"]:
+            return {"job_id": job_id, "status": job["status"], "message": "Job already finished"}
+        job["status"] = "cancelled"
+        job["cancelled_at"] = time.time()
+        return {"job_id": job_id, "status": "cancelled", "message": f"Job {job_id} cancelled"}
+
+
+@app.post("/api/recommend")
+def get_deployment_recommendation(target: DeploymentTarget) -> Dict[str, Any]:
+    """Answer: 'Can I run this model on my device, and is it suitable for my use case?'"""
+    res = evaluate_deployment_recommendation(target)
+    return res.model_dump()
+
+
+@app.get("/api/regression/compare")
+def compare_regression(
+    run1: str,
+    run2: str,
+) -> Dict[str, Any]:
+    """Compare performance and quality between two benchmark experiment files."""
+    results_dir = "results"
+    
+    def load_metrics(filename: str) -> Dict[str, Any]:
+        path = os.path.join(results_dir, filename if filename.endswith((".csv", ".jsonl")) else f"{filename}.csv")
+        if not os.path.exists(path):
+            raise HTTPException(status_code=404, detail=f"Result file '{filename}' not found")
+        
+        tps_list = []
+        ttft_list = []
+        passed = 0
+        total = 0
+        
+        with open(path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get("run_type") == "measured" or not row.get("run_type"):
+                    total += 1
+                    if row.get("decode_tps"):
+                        try: tps_list.append(float(row["decode_tps"]))
+                        except ValueError: pass
+                    if row.get("ttft_client_ms"):
+                        try: ttft_list.append(float(row["ttft_client_ms"]))
+                        except ValueError: pass
+                    if row.get("quality_passed") in ["True", "true", "1"] or row.get("outcome") == "SUCCESS":
+                        passed += 1
+
+        avg_tps = round(sum(tps_list) / len(tps_list), 2) if tps_list else 0.0
+        med_ttft = round(sorted(ttft_list)[len(ttft_list)//2], 2) if ttft_list else 0.0
+        pass_rate = round((passed / (total or 1)) * 100.0, 1)
+
+        return {"avg_tps": avg_tps, "median_ttft_ms": med_ttft, "pass_rate_pct": pass_rate, "total_runs": total}
+
+    m1 = load_metrics(run1)
+    m2 = load_metrics(run2)
+
+    tps_delta = round(m2["avg_tps"] - m1["avg_tps"], 2)
+    ttft_delta = round(m2["median_ttft_ms"] - m1["median_ttft_ms"], 2)
+    pass_delta = round(m2["pass_rate_pct"] - m1["pass_rate_pct"], 1)
+
+    verdict = "NEUTRAL"
+    if tps_delta >= 2.0 and pass_delta >= 0:
+        verdict = "IMPROVED"
+    elif tps_delta <= -2.0 or pass_delta <= -5.0:
+        verdict = "REGRESSED"
+
+    return {
+        "baseline_run": run1,
+        "comparison_run": run2,
+        "baseline_metrics": m1,
+        "comparison_metrics": m2,
+        "deltas": {
+            "decode_tps_delta": tps_delta,
+            "ttft_ms_delta": ttft_delta,
+            "quality_pass_rate_delta_pct": pass_delta,
+        },
+        "verdict": verdict,
+    }
 
 
 @app.post("/api/upload-results", status_code=status.HTTP_201_CREATED)

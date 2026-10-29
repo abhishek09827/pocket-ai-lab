@@ -97,3 +97,56 @@ def test_upload_results_success(tmp_path):
     data = resp.json()
     assert data["status"] == "success"
     assert data["filename"] == "android_test_mock.jsonl"
+
+
+def test_deployment_recommendation_endpoint():
+    req = {
+        "device_id": "realme_9_pro_plus",
+        "model_tag": "qwen2.5:1.5b",
+        "quantization": "Q4_K_M",
+        "runtime": "llama.cpp",
+        "context_tokens": 2048,
+        "target_task": "coding",
+    }
+    resp = client.post("/api/recommend", json=req)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "verdict" in data
+    assert "observed_metrics" in data
+    assert "hardware_headroom" in data
+
+
+def test_job_cancellation():
+    # Submit job
+    submit_resp = client.post(
+        "/api/jobs/evaluate",
+        json={"model": "qwen2.5:0.5b", "repeats": 1, "warmups": 0},
+        headers={"X-Pocket-Token": AUTH_TOKEN},
+    )
+    job_id = submit_resp.json()["job_id"]
+
+    # Cancel without token -> 401
+    cancel_no_tok = client.post(f"/api/jobs/{job_id}/cancel")
+    assert cancel_no_tok.status_code == 401
+
+    # Cancel with token -> 200
+    cancel_ok = client.post(
+        f"/api/jobs/{job_id}/cancel",
+        headers={"X-Pocket-Token": AUTH_TOKEN},
+    )
+    assert cancel_ok.status_code == 200
+    assert cancel_ok.json()["status"] in ["cancelled", "completed", "failed"]
+
+
+def test_regression_comparison():
+    # Find existing csv files
+    import glob, os
+    files = glob.glob("results/reasoning_*.csv")
+    if len(files) >= 2:
+        f1 = os.path.basename(files[0])
+        f2 = os.path.basename(files[1])
+        resp = client.get(f"/api/regression/compare?run1={f1}&run2={f2}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "deltas" in data
+        assert "verdict" in data
