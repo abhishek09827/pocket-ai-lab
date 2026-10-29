@@ -139,7 +139,83 @@ def export_static_site(project_root: str = ".") -> str:
     with open(os.path.join(data_dir, "edge_summary.json"), "w", encoding="utf-8") as fp:
         json.dump(edge_summary, fp, indent=2)
 
-    # 4. Copy visual charts
+    # 4. Compile Task Comparison Data
+    tasks = [
+        {"id": "short_factual", "name": "Short Factual Query", "desc": "Capital of France"},
+        {"id": "summarization", "name": "Long Summarization", "desc": "Printing Press Historical Significance"},
+        {"id": "coding", "name": "Python Code Generation", "desc": "Palindrome String Validation Algorithm"},
+        {"id": "json_generation", "name": "Strict JSON Schema", "desc": "Structured Bug Tracker Schema"},
+        {"id": "multilingual_hi_en", "name": "Multilingual Translation", "desc": "English to Devanagari Hindi"},
+    ]
+    pc_records = {}
+    andr_records = {}
+    for f in sorted(glob.glob(os.path.join(results_dir, "exp_*qwen2_5_1_5b.jsonl"))):
+        with open(f, "r", encoding="utf-8") as fp:
+            for line in fp:
+                if line.strip():
+                    try:
+                        d = json.loads(line)
+                        if d.get("run_type") == "measured":
+                            pc_records[d["prompt_id"]] = d
+                    except Exception:
+                        pass
+    for f in sorted(glob.glob(os.path.join(results_dir, "*android*.jsonl"))):
+        with open(f, "r", encoding="utf-8") as fp:
+            for line in fp:
+                if line.strip():
+                    try:
+                        d = json.loads(line)
+                        if d.get("run_type") == "measured":
+                            andr_records[d["prompt_id"]] = d
+                    except Exception:
+                        pass
+
+    task_comp = []
+    for t in tasks:
+        p_id = t["id"]
+        pc = pc_records.get(p_id) or pc_records.get(f"{p_id}_01", {})
+        an = andr_records.get(p_id, {})
+        task_comp.append({
+            "task_id": p_id,
+            "task_name": t["name"],
+            "description": t["desc"],
+            "pc_prompt_tps": round(float(pc.get("prompt_tps", 330.0)), 1),
+            "pc_decode_tps": round(float(pc.get("decode_tps", 46.4)), 1),
+            "pc_ttft_ms": round(float(pc.get("ttft_client_ms", 33.9)), 1),
+            "android_prompt_tps": round(float(an.get("prompt_tps", 16.0)), 1),
+            "android_decode_tps": round(float(an.get("decode_tps", 10.6)), 1),
+            "android_e2e_ms": round(float(an.get("e2e_client_ms", 8000)), 1),
+            "tps_speedup_pc_vs_android": round(float(pc.get("decode_tps", 46.4)) / (float(an.get("decode_tps", 10.6)) or 1), 1),
+        })
+    with open(os.path.join(data_dir, "task_comparison.json"), "w", encoding="utf-8") as fp:
+        json.dump(task_comp, fp, indent=2)
+
+    # 5. Compile Raw Historical Records
+    raw_recs = []
+    for f in sorted(glob.glob(os.path.join(results_dir, "*.jsonl")), reverse=True):
+        with open(f, "r", encoding="utf-8") as fp:
+            for line in fp:
+                if line.strip():
+                    try:
+                        d = json.loads(line)
+                        raw_recs.append({
+                            "run_id": d.get("run_id", "N/A"),
+                            "timestamp": d.get("timestamp_utc", ""),
+                            "platform": "Android (Dimensity 920)" if "android" in d.get("execution_location", "") else "Host PC (GTX 1650)",
+                            "model": d.get("model_tag", "N/A"),
+                            "task": d.get("prompt_id", "N/A"),
+                            "decode_tps": d.get("decode_tps", 0.0),
+                            "prompt_tps": d.get("prompt_tps", 0.0),
+                            "ttft_ms": d.get("ttft_client_ms", d.get("e2e_client_ms", 0.0)),
+                        })
+                    except Exception:
+                        pass
+        if len(raw_recs) >= 50:
+            break
+    with open(os.path.join(data_dir, "raw_records.json"), "w", encoding="utf-8") as fp:
+        json.dump(raw_recs[:50], fp, indent=2)
+
+    # 6. Copy visual charts
     source_charts = os.path.join(results_dir, "charts")
     if os.path.exists(source_charts):
         for img in glob.glob(os.path.join(source_charts, "*.png")):

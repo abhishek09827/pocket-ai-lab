@@ -3,20 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pocket AI Lab — Edge AI Leaderboard & Control Plane</title>
+    <title>Pocket AI Lab — Edge AI Benchmarking & Hardware Frontier</title>
     <style>
         :root {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-card: #1e293b;
-            --border-color: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --bg-primary: #0a0f1d;
+            --bg-secondary: #111827;
+            --bg-card: #1f293d;
+            --bg-card-hover: #26334d;
+            --border-color: #374151;
+            --border-highlight: #4f46e5;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
             --accent-blue: #38bdf8;
-            --accent-green: #4ade80;
+            --accent-green: #34d399;
             --accent-orange: #fb923c;
             --accent-purple: #c084fc;
             --accent-red: #f87171;
+            --pc-color: #38bdf8;
+            --phone-color: #34d399;
             --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
 
@@ -31,51 +35,117 @@
             background-color: var(--bg-primary);
             color: var(--text-main);
             line-height: 1.6;
-            padding: 24px;
+            padding: 20px;
         }
 
         .container {
-            max-width: 1240px;
+            max-width: 1300px;
             margin: 0 auto;
         }
 
+        /* Header */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 24px;
+            padding-bottom: 20px;
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 24px;
             flex-wrap: wrap;
             gap: 16px;
         }
 
-        .brand h1 {
+        .brand-title {
             font-size: 1.8rem;
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: -0.02em;
-            color: #ffffff;
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .brand p {
+        .brand-subtitle {
             color: var(--text-muted);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             margin-top: 4px;
         }
 
-        .hardware-badge {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            background: var(--bg-secondary);
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
+        /* Dual Hardware Status Badges */
+        .hardware-duel-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
-        .badge-dot {
+        @media (max-width: 768px) {
+            .hardware-duel-bar {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hw-badge-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hw-badge-card.pc-theme {
+            border-left: 4px solid var(--pc-color);
+        }
+
+        .hw-badge-card.phone-theme {
+            border-left: 4px solid var(--phone-color);
+        }
+
+        .hw-icon {
+            font-size: 2rem;
+            margin-right: 14px;
+        }
+
+        .hw-info {
+            flex-grow: 1;
+        }
+
+        .hw-tag {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .hw-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 2px 0;
+        }
+
+        .hw-spec {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .hw-status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            background: rgba(52, 211, 153, 0.15);
+            color: #34d399;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .status-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
@@ -84,64 +154,125 @@
         }
 
         @keyframes pulse {
-            0% { opacity: 0.5; }
+            0% { opacity: 0.4; }
             50% { opacity: 1; }
-            100% { opacity: 0.5; }
+            100% { opacity: 0.4; }
         }
 
-        /* Section Layout */
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin: 28px 0 16px 0;
+        /* Navigation Tabs */
+        .tab-nav {
             display: flex;
-            align-items: center;
             gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 4px;
         }
 
-        /* Hardware Metrics Grid */
-        .metrics-grid {
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-card);
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            background: #2563eb;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Head to Head Duel Grid */
+        .duel-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 16px;
             margin-bottom: 28px;
         }
 
-        .metric-card {
+        .duel-kpi-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 16px;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
         }
 
-        .metric-label {
-            font-size: 0.8rem;
+        .kpi-title {
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             color: var(--text-muted);
-            margin-bottom: 6px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
         }
 
-        .metric-value {
-            font-size: 1.4rem;
-            font-weight: 700;
+        .kpi-duel-numbers {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .kpi-val-pc {
+            font-size: 1.6rem;
+            font-weight: 800;
             font-family: var(--font-mono);
-            color: var(--accent-blue);
+            color: var(--pc-color);
         }
 
-        .metric-sub {
-            font-size: 0.8rem;
+        .kpi-val-vs {
+            font-size: 0.85rem;
+            font-weight: 700;
             color: var(--text-muted);
-            margin-top: 4px;
         }
 
-        /* Leaderboard Table */
+        .kpi-val-phone {
+            font-size: 1.6rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--phone-color);
+        }
+
+        .kpi-verdict {
+            font-size: 0.85rem;
+            padding-top: 8px;
+            border-top: 1px dashed var(--border-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .kpi-verdict strong {
+            color: var(--accent-orange);
+        }
+
+        /* Tables */
         .table-container {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 12px;
             overflow-x: auto;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
         }
 
         table {
@@ -152,86 +283,127 @@
         }
 
         th {
-            background-color: #1a2234;
+            background: rgba(15, 23, 42, 0.6);
             color: var(--text-muted);
             font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             padding: 14px 16px;
             border-bottom: 1px solid var(--border-color);
-            cursor: pointer;
-            user-select: none;
-        }
-
-        th:hover {
-            color: var(--accent-blue);
         }
 
         td {
             padding: 14px 16px;
             border-bottom: 1px solid var(--border-color);
+            font-family: var(--font-mono);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
         }
 
         tr:hover td {
-            background-color: rgba(255, 255, 255, 0.02);
+            background: rgba(255, 255, 255, 0.02);
         }
 
         .model-name {
             font-family: var(--font-mono);
-            font-weight: 600;
+            font-weight: 700;
             color: #ffffff;
         }
 
+        /* Badges & Pills */
         .pill {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
             font-weight: 600;
-            font-family: var(--font-mono);
         }
 
-        .pill-green { background: rgba(74, 222, 128, 0.15); color: var(--accent-green); }
-        .pill-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); }
-        .pill-orange { background: rgba(251, 146, 60, 0.15); color: var(--accent-orange); }
-        .pill-red { background: rgba(248, 113, 113, 0.15); color: var(--accent-red); }
+        .pill-green { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+        .pill-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+        .pill-orange { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+        .pill-red { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+        .pill-purple { background: rgba(192, 132, 252, 0.15); color: #c084fc; }
 
-        /* Visual Gallery */
+        /* Insight Callouts */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .insight-card {
+            background: var(--bg-card);
+            border-left: 4px solid var(--border-highlight);
+            border-radius: 8px;
+            padding: 18px 20px;
+        }
+
+        .insight-card.warning { border-left-color: var(--accent-orange); }
+        .insight-card.danger { border-left-color: var(--accent-red); }
+        .insight-card.success { border-left-color: var(--accent-green); }
+
+        .insight-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .insight-text {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Gallery */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
             gap: 20px;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
         }
 
         .chart-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
         }
 
         .chart-card img {
             width: 100%;
             height: auto;
             display: block;
-            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            background: #000;
         }
 
         .chart-caption {
-            padding: 12px 16px;
+            padding: 14px 18px;
             font-size: 0.85rem;
             color: var(--text-muted);
-            border-top: 1px solid var(--border-color);
         }
 
-        /* Control Plane Form */
+        .chart-caption strong {
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Control Panel */
         .control-panel {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 32px;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 28px;
         }
 
         .form-grid {
@@ -248,41 +420,54 @@
             margin-bottom: 6px;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
-            padding: 10px 12px;
+            padding: 10px 14px;
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 8px;
             color: var(--text-main);
             font-family: var(--font-mono);
             font-size: 0.9rem;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: var(--accent-blue);
         }
 
         button.btn-primary {
-            padding: 10px 20px;
+            padding: 10px 22px;
             background: #0284c7;
             color: #ffffff;
             border: none;
-            border-radius: 6px;
-            font-weight: 600;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: background 0.15s ease;
         }
 
-        button.btn-primary:hover {
-            background: #0369a1;
+        button.btn-primary:hover { background: #0369a1; }
+
+        button.btn-success {
+            padding: 10px 22px;
+            background: #059669;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.15s ease;
         }
+
+        button.btn-success:hover { background: #047857; }
 
         #job-status-banner {
             margin-top: 16px;
-            padding: 12px;
-            border-radius: 6px;
+            padding: 12px 16px;
+            border-radius: 8px;
             display: none;
             font-family: var(--font-mono);
             font-size: 0.85rem;
@@ -302,218 +487,395 @@
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <header>
             <div class="brand">
-                <h1>Pocket AI Lab</h1>
-                <p>Reproducible Edge AI Benchmarking & Physical Reasoning Frontier</p>
+                <div class="brand-title">Pocket AI Lab</div>
+                <div class="brand-subtitle">Empirical Edge Inference Research & Reproducible SLM Benchmarking</div>
             </div>
-            <div class="hardware-badge">
-                <div class="badge-dot"></div>
-                <span id="hw-status-text">Intel i5-10300H | NVIDIA GTX 1650 (4GB) | Ollama 0.34.4</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span class="hw-status-pill"><span class="status-dot"></span> TAILSCALE MESH CONNECTED</span>
             </div>
         </header>
 
-        <!-- Live Telemetry Grid -->
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-label">GPU Model & Driver</div>
-                <div class="metric-value" style="font-size: 1.15rem;">GTX 1650 (596.49)</div>
-                <div class="metric-sub" id="gpu-temp-sub">Temp: --°C | 4,096 MB VRAM</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Peak VRAM Allocation</div>
-                <div class="metric-value" id="val-vram">2,228 MB</div>
-                <div class="metric-sub">54.4% of 4GB GTX 1650 Budget</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Fastest Edge TTFT</div>
-                <div class="metric-value" id="val-ttft" style="color: var(--accent-green);">24.6 ms</div>
-                <div class="metric-sub">Sub-30ms interactive response</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Max Token Throughput</div>
-                <div class="metric-value" id="val-tps" style="color: var(--accent-purple);">46.4 TPS</div>
-                <div class="metric-sub">Measured on qwen2.5:1.5b</div>
-            </div>
-        </div>
-
-        <!-- Leaderboard -->
-        <div class="section-title">
-            <span>🏆 Edge AI Model Leaderboard (Empirical Measured Data)</span>
-        </div>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Model Name</th>
-                        <th>ALFWorld Planning Success</th>
-                        <th>ALFWorld Invalid Actions</th>
-                        <th>HotpotQA Accuracy</th>
-                        <th>HotpotQA Hallucination</th>
-                        <th>Decode Speed</th>
-                        <th>Median TTFT</th>
-                        <th>Peak VRAM</th>
-                    </tr>
-                </thead>
-                <tbody id="leaderboard-body">
-                    <!-- Populated dynamically via API with fallback -->
-                    <tr>
-                        <td class="model-name">qwen2.5-coder:3b</td>
-                        <td><span class="pill pill-green">60.0% (6/10)</span></td>
-                        <td><span class="pill pill-green">0.0%</span></td>
-                        <td><span class="pill pill-blue">60.0%</span></td>
-                        <td><span class="pill pill-orange">40.0%</span></td>
-                        <td><strong>21.40 TPS</strong></td>
-                        <td>41.1 ms</td>
-                        <td><span class="pill pill-blue">2,227 MB (54%)</span></td>
-                    </tr>
-                    <tr>
-                        <td class="model-name">qwen2.5:3b</td>
-                        <td><span class="pill pill-orange">20.0% (2/10)</span></td>
-                        <td><span class="pill pill-green">0.0%</span></td>
-                        <td><span class="pill pill-green">100.0%</span></td>
-                        <td><span class="pill pill-green">0.0%</span></td>
-                        <td><strong>19.44 TPS</strong></td>
-                        <td>46.8 ms</td>
-                        <td><span class="pill pill-blue">2,228 MB (54%)</span></td>
-                    </tr>
-                    <tr>
-                        <td class="model-name">qwen2.5:1.5b</td>
-                        <td><span class="pill pill-red">0.0% (0/10)</span></td>
-                        <td><span class="pill pill-red">40.0%</span></td>
-                        <td><span class="pill pill-green">100.0%</span></td>
-                        <td><span class="pill pill-green">0.0%</span></td>
-                        <td><span class="pill pill-green">46.41 TPS</span></td>
-                        <td><span class="pill pill-green">33.9 ms</span></td>
-                        <td><span class="pill pill-green">1,293 MB (31%)</span></td>
-                    </tr>
-                    <tr>
-                        <td class="model-name">llama3.2:1b</td>
-                        <td><span class="pill pill-red">0.0% (0/10)</span></td>
-                        <td><span class="pill pill-red">40.0%</span></td>
-                        <td><span class="pill pill-orange">40.0%</span></td>
-                        <td><span class="pill pill-red">60.0%</span></td>
-                        <td><span class="pill pill-green">43.91 TPS</span></td>
-                        <td><span class="pill pill-green">25.0 ms</span></td>
-                        <td><span class="pill pill-green">1,622 MB (40%)</span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Hardware Comparison: Edge Mobile vs Laptop GPU -->
-        <div class="section-title">
-            <span>📱 Edge Mobile (Dimensity 920) vs Laptop GPU (GTX 1650) Empirical Frontier</span>
-        </div>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Platform & Architecture</th>
-                        <th>Execution Engine</th>
-                        <th>Compute Device</th>
-                        <th>Prompt Speed</th>
-                        <th>Decode Speed</th>
-                        <th>Power Consumption</th>
-                        <th>Energy Efficiency</th>
-                    </tr>
-                </thead>
-                <tbody id="edge-table-body">
-                    <tr>
-                        <td class="model-name">NVIDIA GTX 1650 (Laptop)</td>
-                        <td>Ollama v0.34.4 (CUDA)</td>
-                        <td>Dedicated 4GB GDDR6</td>
-                        <td><span class="pill pill-green">354.2 TPS</span></td>
-                        <td><span class="pill pill-green">46.41 TPS</span></td>
-                        <td>~50 Watts</td>
-                        <td>0.92 TPS / Watt</td>
-                    </tr>
-                    <tr>
-                        <td class="model-name">realme 9 Pro+ (Dimensity 920)</td>
-                        <td>llama.cpp ARM64 CLI (6T)</td>
-                        <td>2x A78 + 4x A55 CPU</td>
-                        <td><span class="pill pill-blue">16.10 TPS</span></td>
-                        <td><span class="pill pill-blue">10.60 TPS</span></td>
-                        <td><span class="pill pill-green">~4 Watts</span></td>
-                        <td><span class="pill pill-green"><strong>2.65 TPS / Watt (2.8x)</strong></span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Visual Analysis Gallery -->
-        <div class="section-title">
-            <span>📊 Publication Visual Analysis Gallery</span>
-        </div>
-        <div class="gallery-grid">
-            <div class="chart-card">
-                <img src="charts/alfworld_failure_decomposition.png" alt="ALFWorld Failure Decomposition" onerror="this.src='../results/charts/alfworld_failure_decomposition.png'">
-                <div class="chart-caption">
-                    <strong>ALFWorld Planning Failure Breakdown:</strong> Evaluates physical causality and planning coherence. Inspired by Shinn & Labash et al. (2023 - Reflexion).
+        <!-- Dual Hardware Status Bar -->
+        <div class="hardware-duel-bar">
+            <!-- PC Hardware Card -->
+            <div class="hw-badge-card pc-theme">
+                <div style="display: flex; align-items: center;">
+                    <div class="hw-icon">💻</div>
+                    <div class="hw-info">
+                        <div class="hw-tag" style="color: var(--pc-color);">Workstation PC (Host)</div>
+                        <div class="hw-name">Intel Core i5-10300H + NVIDIA GTX 1650</div>
+                        <div class="hw-spec">4GB GDDR6 VRAM | 16GB RAM | cuBLAS CUDA | ~50W TDP</div>
+                    </div>
+                </div>
+                <div class="hw-status-pill">
+                    <span class="status-dot"></span> ACTIVE (127.0.0.1:8000)
                 </div>
             </div>
-            <div class="chart-card">
-                <img src="charts/hotpotqa_hallucination_vs_accuracy.png" alt="HotpotQA Accuracy vs Hallucination" onerror="this.src='../results/charts/hotpotqa_hallucination_vs_accuracy.png'">
-                <div class="chart-caption">
-                    <strong>HotpotQA Multi-Hop Accuracy vs Hallucination:</strong> Demonstrates the factual drift in code-specialized weights compared to general language weights.
+
+            <!-- Phone Hardware Card -->
+            <div class="hw-badge-card phone-theme">
+                <div style="display: flex; align-items: center;">
+                    <div class="hw-icon">📱</div>
+                    <div class="hw-info">
+                        <div class="hw-tag" style="color: var(--phone-color);">Edge Mobile Target</div>
+                        <div class="hw-name">realme 9 Pro+ (MediaTek Dimensity 920)</div>
+                        <div class="hw-spec">2x A78 (2.5GHz) + 6x A55 | 8GB Unified LPDDR4X | ~4W TDP</div>
+                    </div>
                 </div>
-            </div>
-            <div class="chart-card">
-                <img src="charts/edge_hardware_tradeoffs.png" alt="GTX 1650 Hardware Frontier" onerror="this.src='../results/charts/edge_hardware_tradeoffs.png'">
-                <div class="chart-caption">
-                    <strong>GTX 1650 (4GB) Hardware Frontier:</strong> Peak VRAM footprint vs Token throughput trade-off across 1.5B and 3.1B parameter scales.
-                </div>
-            </div>
-            <div class="chart-card">
-                <img src="charts/thermal_stress_qwen2_5_1_5b.png" alt="Sustained Thermal Stress Analysis" onerror="this.src='../results/charts/thermal_stress_qwen2_5_1_5b.png'">
-                <div class="chart-caption">
-                    <strong>Sustained Thermal Degradation (Phase 6):</strong> GTX 1650 thermal equilibrium (82°C) triggers 18.8% decode throughput throttling over sustained inference passes.
+                <div class="hw-status-pill" style="color: #34d399; background: rgba(52, 211, 153, 0.15);">
+                    <span class="status-dot"></span> SSH (100.84.51.84:8022)
                 </div>
             </div>
         </div>
 
-        <!-- Authenticated Control Plane Job Runner -->
-        <div class="section-title">
-            <span>⚡ Automated Edge Evaluation Control Plane</span>
-        </div>
-        <div class="control-panel">
-            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;">
-                Dispatch automated continuous evaluation jobs to the loopback control plane. Requires <code>X-Pocket-Token</code> authentication.
-            </p>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="input-model">Ollama Model Tag</label>
-                    <input type="text" id="input-model" placeholder="e.g. llama3.2:1b" value="llama3.2:1b">
-                </div>
-                <div class="form-group">
-                    <label for="input-repeats">Measured Repeats</label>
-                    <input type="number" id="input-repeats" value="2" min="1" max="5">
-                </div>
-                <div class="form-group">
-                    <label for="input-token">Security Token (X-Pocket-Token)</label>
-                    <input type="password" id="input-token" placeholder="Paste ~/.pocket_ai_lab_token">
-                </div>
-                <div class="form-group">
-                    <button class="btn-primary" id="btn-submit" onclick="submitEvaluationJob()">Launch Benchmark</button>
-                </div>
-            </div>
-            <div id="job-status-banner"></div>
+        <!-- Navigation Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('tab-duel')">⚔️ Hardware Duel</button>
+            <button class="tab-btn" onclick="switchTab('tab-leaderboard')">🏆 Model Leaderboard & Reasoning</button>
+            <button class="tab-btn" onclick="switchTab('tab-tasks')">🔬 Per-Task Deep Dive</button>
+            <button class="tab-btn" onclick="switchTab('tab-insights')">💡 Research Insights</button>
+            <button class="tab-btn" onclick="switchTab('tab-gallery')">📊 Visual Charts</button>
+            <button class="tab-btn" onclick="switchTab('tab-control')">⚡ Control Plane & Runner</button>
+            <button class="tab-btn" onclick="switchTab('tab-data')">📦 Raw Telemetry Explorer</button>
         </div>
 
+        <!-- TAB 1: HARDWARE DUEL -->
+        <div id="tab-duel" class="tab-pane active">
+            <!-- Head to head KPI Cards -->
+            <div class="duel-grid">
+                <div class="duel-kpi-card">
+                    <div class="kpi-title">
+                        <span>Decode Throughput (TPS)</span>
+                        <span>Higher is Better</span>
+                    </div>
+                    <div class="kpi-duel-numbers">
+                        <span class="kpi-val-pc" id="duel-pc-tps">46.41</span>
+                        <span class="kpi-val-vs">vs</span>
+                        <span class="kpi-val-phone" id="duel-phone-tps">10.64</span>
+                    </div>
+                    <div class="kpi-verdict">
+                        <span>Laptop GPU Raw Speed:</span>
+                        <strong>4.4x Faster</strong>
+                    </div>
+                </div>
+
+                <div class="duel-kpi-card">
+                    <div class="kpi-title">
+                        <span>Prompt Prefill Speed (TPS)</span>
+                        <span>Higher is Better</span>
+                    </div>
+                    <div class="kpi-duel-numbers">
+                        <span class="kpi-val-pc">354.2</span>
+                        <span class="kpi-val-vs">vs</span>
+                        <span class="kpi-val-phone" id="duel-phone-prompt-tps">16.10</span>
+                    </div>
+                    <div class="kpi-verdict">
+                        <span>CUDA Tensor Parallelism:</span>
+                        <strong>22.0x Faster Prefill</strong>
+                    </div>
+                </div>
+
+                <div class="duel-kpi-card">
+                    <div class="kpi-title">
+                        <span>Energy Efficiency (Tokens / Watt)</span>
+                        <span>Higher is Better</span>
+                    </div>
+                    <div class="kpi-duel-numbers">
+                        <span class="kpi-val-pc">0.92</span>
+                        <span class="kpi-val-vs">vs</span>
+                        <span class="kpi-val-phone" id="duel-phone-eff">2.66</span>
+                    </div>
+                    <div class="kpi-verdict">
+                        <span>Mobile Energy Advantage:</span>
+                        <strong style="color: #34d399;">2.8x More Efficient</strong>
+                    </div>
+                </div>
+
+                <div class="duel-kpi-card">
+                    <div class="kpi-title">
+                        <span>RAM Budget & Model Ceiling</span>
+                        <span>Usable Window</span>
+                    </div>
+                    <div class="kpi-duel-numbers">
+                        <span class="kpi-val-pc" style="font-size: 1.25rem;">4GB VRAM Hard Limit</span>
+                        <span class="kpi-val-vs">vs</span>
+                        <span class="kpi-val-phone" style="font-size: 1.25rem;">8GB Unified Memory</span>
+                    </div>
+                    <div class="kpi-verdict">
+                        <span>Model Capacity Window:</span>
+                        <strong style="color: #34d399;">Phone Fits Larger Models</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Head to Head Architecture Table -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hardware Metric</th>
+                            <th style="color: var(--pc-color);">Host PC (NVIDIA GTX 1650 4GB)</th>
+                            <th style="color: var(--phone-color);">Edge Mobile (realme 9 Pro+ / Dimensity 920)</th>
+                            <th>Scientific Significance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="model-name">Target Model Evaluated</td>
+                            <td><span class="pill pill-blue">qwen2.5:1.5b (Q4_K_M)</span></td>
+                            <td><span class="pill pill-green">qwen2.5:1.5b (Q4_K_M)</span></td>
+                            <td>Identical parameter weights & quantization</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Runtime Inference Engine</td>
+                            <td>Ollama v0.34.4 (cuBLAS CUDA)</td>
+                            <td>llama.cpp ARM64 CLI (6 CPU Threads)</td>
+                            <td>Dedicated GPU vs ARM Neon Vectorized CPU</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Memory Footprint</td>
+                            <td>1,293 MB VRAM (31.6% of 4GB)</td>
+                            <td>1,120 MB RAM (~3.2 GB free)</td>
+                            <td>Phone has 2x higher headroom before OOM</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Prompt Eval Throughput</td>
+                            <td><span class="pill pill-green">354.2 TPS</span></td>
+                            <td><span class="pill pill-blue" id="table-phone-prompt-tps">14.76 TPS</span></td>
+                            <td>CUDA tensor cores excel at matrix-vector math</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Decode Token Throughput</td>
+                            <td><span class="pill pill-green">46.41 TPS</span></td>
+                            <td><span class="pill pill-blue" id="table-phone-decode-tps">10.64 TPS</span></td>
+                            <td>Phone easily sustains interactive conversational speed</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Client Time-to-First-Token</td>
+                            <td><span class="pill pill-green">33.9 ms</span></td>
+                            <td><span class="pill pill-orange">~310 ms</span></td>
+                            <td>Fast enough for zero perceived lag</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Operating Thermal Envelope</td>
+                            <td>79°C -> 82°C (Active Fan Throttles -18.8%)</td>
+                            <td>Passive Heat Pipe (Ambient Equilibrium)</td>
+                            <td>Both platforms hit thermal ceilings under load</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: MODEL LEADERBOARD & REASONING -->
+        <div id="tab-leaderboard" class="tab-pane">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model Tag</th>
+                            <th>ALFWorld Planning Success</th>
+                            <th>ALFWorld Invalid Actions</th>
+                            <th>HotpotQA Accuracy</th>
+                            <th>HotpotQA Hallucination</th>
+                            <th>Decode Speed</th>
+                            <th>Median TTFT</th>
+                            <th>Peak VRAM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- Dynamic -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: PER-TASK DEEP DIVE -->
+        <div id="tab-tasks" class="tab-pane">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Benchmark Task</th>
+                            <th>Task Description</th>
+                            <th>PC Throughput</th>
+                            <th>Mobile Throughput</th>
+                            <th>PC TTFT</th>
+                            <th>Speedup Ratio</th>
+                        </tr>
+                    </thead>
+                    <tbody id="task-comparison-body">
+                        <!-- Dynamic -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 4: RESEARCH INSIGHTS -->
+        <div id="tab-insights" class="tab-pane">
+            <div class="insights-grid">
+                <div class="insight-card success">
+                    <div class="insight-header">⚡ The Energy Inversion (Tokens per Watt)</div>
+                    <div class="insight-text">
+                        While the GTX 1650 is 4.4x faster in token throughput, it burns ~50 Watts. The MediaTek Dimensity 920 operates at just ~4 Watts, delivering <strong>2.66 Tokens/Watt</strong> compared to the GPU's 0.92 Tokens/Watt. For battery-powered continuous edge inference, mobile CPUs are 2.8x more energy-efficient!
+                    </div>
+                </div>
+
+                <div class="insight-card danger">
+                    <div class="insight-header">🧩 The Embodied Causality Deficit in <3B SLMs</div>
+                    <div class="insight-text">
+                        Both <code>qwen2.5:1.5b</code> and <code>llama3.2:1b</code> suffered a 0% success rate on ALFWorld embodied planning. 40% of their attempts failed due to <em>invalid actions</em> (attempting to pick objects before opening containers). Small language models lack physical state transition guarantees without external verification.
+                    </div>
+                </div>
+
+                <div class="insight-card warning">
+                    <div class="insight-header">💻 Code Fine-Tuning as an Embodied Reasoning Anchor</div>
+                    <div class="insight-text">
+                        <code>qwen2.5-coder:3b</code> achieved a 60% success rate on ALFWorld with 0% invalid actions, tripling the general 3B model (20%). Syntax and control-flow training directly reinforce causal state-tracking. However, code fine-tuning introduced a 40% factual hallucination rate on non-code HotpotQA tasks.
+                    </div>
+                </div>
+
+                <div class="insight-card warning">
+                    <div class="insight-header">🔥 Sustained Thermal Degradation (-18.8%)</div>
+                    <div class="insight-text">
+                        Continuous inference on the GTX 1650 pushes the die temperature from 79°C to the 82°C NVIDIA target limit, causing boost clocks to throttle and dropping decode throughput from <strong>79.81 TPS down to 64.78 TPS (-18.83%)</strong>. True edge benchmarking must account for thermal equilibrium.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: VISUAL CHARTS -->
+        <div id="tab-gallery" class="tab-pane">
+            <div class="gallery-grid">
+                <div class="chart-card">
+                    <img src="charts/edge_hardware_tradeoffs.png" alt="GTX 1650 Hardware Frontier" onerror="this.src='../results/charts/edge_hardware_tradeoffs.png'">
+                    <div class="chart-caption">
+                        <strong>GTX 1650 (4GB) Hardware Frontier:</strong> Peak VRAM footprint vs Token throughput trade-off across 1.5B and 3.1B parameter scales.
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <img src="charts/thermal_stress_qwen2_5_1_5b.png" alt="Sustained Thermal Stress Analysis" onerror="this.src='../results/charts/thermal_stress_qwen2_5_1_5b.png'">
+                    <div class="chart-caption">
+                        <strong>Sustained Thermal Degradation (Phase 6):</strong> GTX 1650 thermal equilibrium (82°C) triggers 18.8% decode throughput throttling.
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <img src="charts/alfworld_failure_decomposition.png" alt="ALFWorld Failure Decomposition" onerror="this.src='../results/charts/alfworld_failure_decomposition.png'">
+                    <div class="chart-caption">
+                        <strong>ALFWorld Planning Failure Breakdown:</strong> Evaluates physical causality and planning coherence (Shinn & Labash et al., 2023).
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <img src="charts/hotpotqa_hallucination_vs_accuracy.png" alt="HotpotQA Accuracy vs Hallucination" onerror="this.src='../results/charts/hotpotqa_hallucination_vs_accuracy.png'">
+                    <div class="chart-caption">
+                        <strong>HotpotQA Multi-Hop Accuracy vs Hallucination:</strong> Demonstrates factual drift in code-specialized weights compared to general weights.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: CONTROL PLANE -->
+        <div id="tab-control" class="tab-pane">
+            <div class="control-panel">
+                <h3 style="margin-bottom: 8px;">Automated Benchmark Control Plane</h3>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">
+                    Dispatch automated evaluation jobs to the loopback control plane or trigger the realme 9 Pro+ remotely. Requires <code>X-Pocket-Token</code> authentication.
+                </p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="input-target">Execution Platform</label>
+                        <select id="input-target">
+                            <option value="pc">Host PC (GTX 1650 GPU)</option>
+                            <option value="phone">realme 9 Pro+ (Dimensity 920 ARM64)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="input-model">Model Tag</label>
+                        <input type="text" id="input-model" placeholder="e.g. qwen2.5:1.5b" value="qwen2.5:1.5b">
+                    </div>
+                    <div class="form-group">
+                        <label for="input-token">Security Token (X-Pocket-Token)</label>
+                        <input type="password" id="input-token" placeholder="Paste ~/.pocket_ai_lab_token">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn-primary" id="btn-submit" onclick="submitJob()">Launch Benchmark</button>
+                    </div>
+                </div>
+                <div id="job-status-banner"></div>
+            </div>
+        </div>
+
+        <!-- TAB 7: RAW DATA EXPLORER -->
+        <div id="tab-data" class="tab-pane">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 1.1rem;">Historical Benchmark Run Logs (Append-Only JSONL)</h3>
+                <button class="btn-primary" style="padding: 6px 14px; font-size: 0.8rem;" onclick="fetchRawRecords()">Refresh Logs</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Run ID</th>
+                            <th>Timestamp</th>
+                            <th>Platform</th>
+                            <th>Model</th>
+                            <th>Task</th>
+                            <th>Decode TPS</th>
+                            <th>Prompt TPS</th>
+                            <th>Latency / TTFT</th>
+                        </tr>
+                    </thead>
+                    <tbody id="raw-records-body">
+                        <!-- Dynamic -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
         <footer>
             <div>Pocket AI Lab — Zero-Fabrication Empirical Edge Inference Research</div>
-            <div>Strict Loopback Binding: <code>127.0.0.1:11434</code> & <code>127.0.0.1:8000</code></div>
+            <div>Strict Loopback Security: <code>127.0.0.1:8000</code> & Tailscale Mesh Tunneling</div>
         </footer>
     </div>
 
     <script>
-        // Auto-fetch live leaderboard if Control Plane API is active, fallback to static JSON
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            const targetPane = document.getElementById(tabId);
+            if (targetPane) targetPane.classList.add('active');
+        }
+
+        async function fetchEdgeSummary() {
+            try {
+                let resp = await fetch("/api/edge-summary");
+                if (!resp.ok) resp = await fetch("data/edge_summary.json");
+                if (!resp.ok) return;
+                const d = await resp.json();
+                if (!d || !d.android_edge) return;
+
+                document.getElementById("duel-pc-tps").innerText = d.pc_baseline.decode_tps.toFixed(2);
+                document.getElementById("duel-phone-tps").innerText = d.android_edge.decode_tps.toFixed(2);
+                document.getElementById("duel-phone-prompt-tps").innerText = d.android_edge.prompt_tps.toFixed(2);
+                document.getElementById("duel-phone-eff").innerText = d.android_edge.efficiency_tps_per_watt.toFixed(2);
+                
+                const tablePrompt = document.getElementById("table-phone-prompt-tps");
+                if (tablePrompt) tablePrompt.innerText = `${d.android_edge.prompt_tps.toFixed(2)} TPS`;
+                const tableDecode = document.getElementById("table-phone-decode-tps");
+                if (tableDecode) tableDecode.innerText = `${d.android_edge.decode_tps.toFixed(2)} TPS`;
+            } catch (e) {}
+        }
+
         async function fetchLiveLeaderboard() {
             try {
                 let resp = await fetch("/api/leaderboard");
-                if (!resp.ok) {
-                    resp = await fetch("data/leaderboard.json");
-                }
+                if (!resp.ok) resp = await fetch("data/leaderboard.json");
                 if (!resp.ok) return;
                 const data = await resp.json();
                 if (!data || data.length === 0) return;
@@ -534,44 +896,83 @@
                     `;
                     tbody.appendChild(tr);
                 });
-            } catch (e) {
-                // Keep static table fallback
-            }
-        }
-
-        async function fetchTelemetry() {
-            try {
-                const resp = await fetch("/api/telemetry");
-                if (!resp.ok) return;
-                const d = await resp.json();
-                if (d.gpu_temp_c) {
-                    document.getElementById("gpu-temp-sub").innerText = `Temp: ${d.gpu_temp_c}°C | ${d.gpu_vram_total_mb} MB VRAM`;
-                }
             } catch (e) {}
         }
 
-        async function submitEvaluationJob() {
+        async function fetchTaskComparison() {
+            try {
+                const resp = await fetch("/api/task-comparison");
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (!data || data.length === 0) return;
+
+                const tbody = document.getElementById("task-comparison-body");
+                tbody.innerHTML = "";
+                data.forEach(t => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td class="model-name">${t.task_name}</td>
+                        <td style="color: var(--text-muted);">${t.description}</td>
+                        <td><span class="pill pill-green">${t.pc_decode_tps} TPS</span></td>
+                        <td><span class="pill pill-blue">${t.android_decode_tps} TPS</span></td>
+                        <td>${t.pc_ttft_ms} ms</td>
+                        <td><strong>${t.tps_speedup_pc_vs_android}x</strong></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {}
+        }
+
+        async function fetchRawRecords() {
+            try {
+                const resp = await fetch("/api/all-records");
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (!data || data.length === 0) return;
+
+                const tbody = document.getElementById("raw-records-body");
+                tbody.innerHTML = "";
+                data.forEach(r => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td style="font-size: 0.8rem; color: var(--text-muted);">${r.run_id}</td>
+                        <td style="font-size: 0.8rem;">${r.timestamp.replace('T', ' ').replace('Z', '')}</td>
+                        <td><span class="pill ${r.platform.includes('Android') ? 'pill-green' : 'pill-blue'}">${r.platform}</span></td>
+                        <td class="model-name">${r.model}</td>
+                        <td>${r.task}</td>
+                        <td><strong>${r.decode_tps} TPS</strong></td>
+                        <td>${r.prompt_tps} TPS</td>
+                        <td>${r.ttft_ms} ms</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {}
+        }
+
+        async function submitJob() {
+            const target = document.getElementById("input-target").value;
             const model = document.getElementById("input-model").value.trim();
-            const repeats = parseInt(document.getElementById("input-repeats").value, 10);
             const token = document.getElementById("input-token").value.trim();
             const banner = document.getElementById("job-status-banner");
 
-            if (!model) { alert("Please specify a model tag"); return; }
-            if (!token) { alert("Please provide the security token (found in ~/.pocket_ai_lab_token)"); return; }
+            if (!token) { alert("Please provide security token from ~/.pocket_ai_lab_token"); return; }
 
             banner.style.display = "block";
             banner.style.background = "rgba(56, 189, 248, 0.15)";
             banner.style.color = "#38bdf8";
-            banner.innerText = `Submitting evaluation job for ${model}...`;
+            banner.innerText = `Submitting benchmark to ${target === 'phone' ? 'realme 9 Pro+' : 'Host PC'}...`;
+
+            const url = target === 'phone' ? '/api/jobs/phone-benchmark' : '/api/jobs/evaluate';
+            const body = target === 'phone' ? {} : { model: model, repeats: 2, warmups: 1 };
 
             try {
-                const resp = await fetch("/api/jobs/evaluate", {
+                const resp = await fetch(url, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "X-Pocket-Token": token
                     },
-                    body: JSON.stringify({ model: model, repeats: repeats, warmups: 1 })
+                    body: JSON.stringify(body)
                 });
 
                 if (!resp.ok) {
@@ -583,54 +984,28 @@
                 }
 
                 const res = await resp.json();
-                banner.style.background = "rgba(74, 222, 128, 0.15)";
-                banner.style.color = "#4ade80";
+                banner.style.background = "rgba(52, 211, 153, 0.15)";
+                banner.style.color = "#34d399";
                 banner.innerText = `✔ ${res.message}. Poll ID: ${res.job_id}`;
+                
+                // Refresh records after submission
+                setTimeout(() => {
+                    fetchEdgeSummary();
+                    fetchRawRecords();
+                }, 3000);
             } catch (err) {
                 banner.style.background = "rgba(248, 113, 113, 0.15)";
                 banner.style.color = "#f87171";
-                banner.innerText = `Network error connecting to control plane: ${err.message}`;
+                banner.innerText = `Network error: ${err.message}`;
             }
         }
 
-        async function fetchEdgeSummary() {
-            try {
-                let resp = await fetch("/api/edge-summary");
-                if (!resp.ok) {
-                    resp = await fetch("data/edge_summary.json");
-                }
-                if (!resp.ok) return;
-                const d = await resp.json();
-                if (!d || !d.android_edge) return;
-
-                const tbody = document.getElementById("edge-table-body");
-                tbody.innerHTML = `
-                    <tr>
-                        <td class="model-name">${d.pc_baseline.platform}</td>
-                        <td>${d.pc_baseline.runtime}</td>
-                        <td>${d.pc_baseline.compute}</td>
-                        <td><span class="pill pill-green">${d.pc_baseline.prompt_tps} TPS</span></td>
-                        <td><span class="pill pill-green">${d.pc_baseline.decode_tps} TPS</span></td>
-                        <td>~${d.pc_baseline.power_watts} Watts</td>
-                        <td>${d.pc_baseline.efficiency_tps_per_watt} TPS / Watt</td>
-                    </tr>
-                    <tr>
-                        <td class="model-name">${d.android_edge.platform}</td>
-                        <td>${d.android_edge.runtime}</td>
-                        <td>${d.android_edge.compute}</td>
-                        <td><span class="pill pill-blue">${d.android_edge.prompt_tps} TPS</span></td>
-                        <td><span class="pill pill-blue">${d.android_edge.decode_tps} TPS</span></td>
-                        <td><span class="pill pill-green">~${d.android_edge.power_watts} Watts</span></td>
-                        <td><span class="pill pill-green"><strong>${d.android_edge.efficiency_tps_per_watt} TPS / Watt (2.8x)</strong></span></td>
-                    </tr>
-                `;
-            } catch (e) {}
-        }
-
-        fetchLiveLeaderboard();
+        // Initialize all feeds
         fetchEdgeSummary();
-        fetchTelemetry();
-        setInterval(fetchTelemetry, 5000);
+        fetchLiveLeaderboard();
+        fetchTaskComparison();
+        fetchRawRecords();
+        setInterval(fetchEdgeSummary, 5000);
     </script>
 </body>
 </html>
