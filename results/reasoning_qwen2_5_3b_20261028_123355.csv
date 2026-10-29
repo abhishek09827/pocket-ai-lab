@@ -1,0 +1,31 @@
+experiment_id,model_tag,task_id,benchmark_family,category,run_type,iter_num,outcome,outcome_notes,ttft_client_ms,prompt_tps,decode_tps,peak_vram_mb,gpu_temp_c,response_tokens
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_01,hotpotqa_multihop,knowledge_intensive,warmup,1,HALLUCINATION,Hallucinated entity declared as answer: 'Tenet',12724.55,123.91,15.22,2227.0,81.0,5
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_01,hotpotqa_multihop,knowledge_intensive,measured,2,SUCCESS,Correct multi-hop answer derived,37.12,12323.18,19.24,2227.0,82.0,215
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_01,hotpotqa_multihop,knowledge_intensive,measured,3,SUCCESS,Correct multi-hop answer derived,58.04,8344.43,19.08,2227.0,82.0,215
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_02,hotpotqa_multihop,knowledge_intensive,warmup,1,SUCCESS,Correct multi-hop answer derived,1203.22,155.19,18.39,2227.0,83.0,177
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_02,hotpotqa_multihop,knowledge_intensive,measured,2,SUCCESS,Correct multi-hop answer derived,126.87,2212.99,19.11,2228.0,83.0,177
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_02,hotpotqa_multihop,knowledge_intensive,measured,3,SUCCESS,Correct multi-hop answer derived,63.55,3580.86,18.3,2223.0,83.0,177
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_03,hotpotqa_multihop,knowledge_intensive,warmup,1,SUCCESS,Correct multi-hop answer derived,1014.03,151.0,18.37,2223.0,83.0,57
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_03,hotpotqa_multihop,knowledge_intensive,measured,2,SUCCESS,Correct multi-hop answer derived,45.43,4686.79,18.78,2223.0,83.0,57
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_03,hotpotqa_multihop,knowledge_intensive,measured,3,SUCCESS,Correct multi-hop answer derived,39.85,6671.57,18.48,2223.0,83.0,57
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_04,hotpotqa_multihop,knowledge_intensive,warmup,1,SUCCESS,Correct multi-hop answer derived,1298.61,137.65,18.61,2223.0,83.0,242
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_04,hotpotqa_multihop,knowledge_intensive,measured,2,SUCCESS,Correct multi-hop answer derived,89.93,4135.87,18.29,2223.0,84.0,239
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_04,hotpotqa_multihop,knowledge_intensive,measured,3,SUCCESS,Correct multi-hop answer derived,78.16,5167.81,18.5,2223.0,84.0,239
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_05,hotpotqa_multihop,knowledge_intensive,warmup,1,SUCCESS,Correct multi-hop answer derived,974.9,144.36,31.52,2223.0,84.0,4
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_05,hotpotqa_multihop,knowledge_intensive,measured,2,SUCCESS,Correct multi-hop answer derived,61.81,6727.11,26.42,2223.0,84.0,4
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,hotpotqa_05,hotpotqa_multihop,knowledge_intensive,measured,3,SUCCESS,Correct multi-hop answer derived,39.8,4918.38,26.9,2223.0,84.0,4
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_01,alfworld_decision,decision_making,warmup,1,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=False",1491.44,157.16,18.39,2242.0,84.0,60
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_01,alfworld_decision,decision_making,measured,2,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=False",46.75,6885.1,18.97,2232.0,84.0,60
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_01,alfworld_decision,decision_making,measured,3,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=False",51.92,6525.1,18.65,2232.0,84.0,60
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_02,alfworld_decision,decision_making,warmup,1,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=False",1224.8,172.74,18.79,2232.0,84.0,53
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_02,alfworld_decision,decision_making,measured,2,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=False",45.34,5918.01,18.38,2232.0,84.0,54
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_02,alfworld_decision,decision_making,measured,3,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=False",50.33,6700.28,18.18,2232.0,84.0,54
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_03,alfworld_decision,decision_making,warmup,1,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=True",1115.42,158.3,19.47,2232.0,84.0,47
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_03,alfworld_decision,decision_making,measured,2,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=True",30.49,8253.75,18.3,2232.0,84.0,47
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_03,alfworld_decision,decision_making,measured,3,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=True",42.66,5581.52,19.33,2232.0,84.0,47
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_04,alfworld_decision,decision_making,warmup,1,SUCCESS,Optimal physical plan generated in 4 steps,984.61,183.96,18.29,2232.0,84.0,42
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_04,alfworld_decision,decision_making,measured,2,SUCCESS,Optimal physical plan generated in 4 steps,34.62,8035.59,18.03,2232.0,84.0,42
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_04,alfworld_decision,decision_making,measured,3,SUCCESS,Optimal physical plan generated in 4 steps,28.56,9141.62,19.39,2232.0,84.0,42
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_05,alfworld_decision,decision_making,warmup,1,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=True",1198.66,166.76,17.87,2232.0,84.0,69
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_05,alfworld_decision,decision_making,measured,2,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=True",60.31,4249.88,18.16,2232.0,84.0,84
+reasoning_qwen2_5_3b_20261028_123355,qwen2.5:3b,alfworld_05,alfworld_decision,decision_making,measured,3,INCOMPLETE,"Plan did not reach goal completion: goal_placed=False, treatment_applied=True",42.84,6498.24,18.23,2232.0,84.0,84

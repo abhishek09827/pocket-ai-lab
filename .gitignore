@@ -1,0 +1,65 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Secrets & Private Keys (Non-negotiable)
+*.pem
+*.key
+*.priv
+*id_ed25519*
+*id_rsa*
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
+secrets/
+*.secret
+
+# Local credentials & sensitive configs
+*tailscale_key*
+*token*
+*.creds
+
+# Temporary debug artifacts & raw logs containing potential IPs or unredacted traces
+*.tmp
+*.bak
+scratch/
