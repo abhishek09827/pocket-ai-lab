@@ -882,9 +882,33 @@
         <div id="tab-gallery" class="tab-pane">
             <div class="gallery-grid">
                 <div class="chart-card">
-                    <img src="charts/edge_hardware_tradeoffs.png" alt="GTX 1650 Hardware Frontier" onerror="this.src='../results/charts/edge_hardware_tradeoffs.png'">
+                    <img src="charts/hardware_duel_task_breakdown.png" alt="Hardware Duel Task Breakdown" onerror="this.src='../results/charts/hardware_duel_task_breakdown.png'">
                     <div class="chart-caption">
-                        <strong>GTX 1650 (4GB) Hardware Frontier:</strong> Peak VRAM footprint vs Token throughput trade-off across 1.5B and 3.1B parameter scales.
+                        <strong>Cross-Platform Task Breakdown:</strong> Per-task decode generation & prefill speed comparing Host PC (GTX 1650 CUDA) against realme 9 Pro+ (Dimensity 920 CPU).
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <img src="charts/energy_efficiency_pareto.png" alt="The Energy Inversion Pareto Frontier" onerror="this.src='../results/charts/energy_efficiency_pareto.png'">
+                    <div class="chart-caption">
+                        <strong>The Energy Inversion (Tokens-per-Watt):</strong> Dimensity 920 delivers 2.66 Tokens/Watt (4W) vs GTX 1650's 0.93 Tokens/Watt (50W) — 2.89x mobile superiority.
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <img src="charts/ttft_latency_comparison.png" alt="TTFT and Latency Profile" onerror="this.src='../results/charts/ttft_latency_comparison.png'">
+                    <div class="chart-caption">
+                        <strong>TTFT & Turnaround Bounds:</strong> Client-side Time-to-First-Token across 1B–3.1B parameter scales and end-to-end latency scaling by response length.
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <img src="charts/cognitive_reasoning_tradeoff.png" alt="Cognitive Capability Tradeoff" onerror="this.src='../results/charts/cognitive_reasoning_tradeoff.png'">
+                    <div class="chart-caption">
+                        <strong>Cognitive Capability Tradeoff:</strong> ALFWorld planning success vs HotpotQA factual accuracy (bubble size represents generation throughput TPS).
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <img src="charts/context_scaling_qwen2_5_1_5b.png" alt="Context Scaling & KV-Cache Footprint" onerror="this.src='../results/charts/context_scaling_qwen2_5_1_5b.png'">
+                    <div class="chart-caption">
+                        <strong>Context Scaling & KV-Cache Footprint:</strong> Measured TTFT non-linear inflection and empirical VRAM expansion from 256 to 4,096 tokens on GTX 1650.
                     </div>
                 </div>
                 <div class="chart-card">
@@ -894,9 +918,9 @@
                     </div>
                 </div>
                 <div class="chart-card">
-                    <img src="charts/context_scaling_qwen2_5_1_5b.png" alt="Context Scaling & KV-Cache Footprint" onerror="this.src='../results/charts/context_scaling_qwen2_5_1_5b.png'">
+                    <img src="charts/edge_hardware_tradeoffs.png" alt="GTX 1650 Hardware Frontier" onerror="this.src='../results/charts/edge_hardware_tradeoffs.png'">
                     <div class="chart-caption">
-                        <strong>Context Scaling & KV-Cache Footprint:</strong> Measured TTFT non-linear inflection and empirical VRAM expansion from 256 to 4,096 tokens on GTX 1650.
+                        <strong>GTX 1650 (4GB) Hardware Frontier:</strong> Peak VRAM footprint vs Token throughput trade-off across 1.5B and 3.1B parameter scales.
                     </div>
                 </div>
                 <div class="chart-card">
