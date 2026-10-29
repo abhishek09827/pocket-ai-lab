@@ -1,0 +1,80 @@
+=================================================================
+ Pocket AI Lab - Phase 0 Environment Discovery
+ Timestamp (UTC): 2026-10-28 10:55:30 UTC
+=================================================================
+
+--- 1. OS & Kernel ---
+Kernel: Linux 6.18.33.2-microsoft-standard-WSL2 x86_64
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.4 LTS (Noble Numbat)"
+ID=ubuntu
+
+--- 2. CPU Architecture & Features ---
+Architecture:                            x86_64
+CPU(s):                                  8
+Model name:                              Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz
+Thread(s) per core:                      2
+Core(s) per socket:                      4
+Socket(s):                               1
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow ept vpid ept_ad fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt xsaveopt xsavec xgetbv1 xsaves vnmi md_clear flush_l1d arch_capabilities
+NUMA node0 CPU(s):                       0-7
+Key Vector Extensions: avx avx2 fma 
+
+--- 3. Memory & Storage ---
+>> System Memory:
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       3.6Gi        10Gi       4.2Mi       1.6Gi        11Gi
+Swap:          8.0Gi          0B       8.0Gi
+
+>> Filesystem Usage:
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sdd       1007G   62G  894G   7% /
+/dev/sdd       1007G   62G  894G   7% /
+
+--- 4. GPU & Acceleration ---
+>> PCI Display Devices (lspci):
+lspci not installed
+
+>> NVIDIA System Management Interface (nvidia-smi):
+NVIDIA GeForce GTX 1650, 596.49, 4096 MiB, 3769 MiB, 167 MiB, 75, 7 %, 2 %
+
+--- 5. Network, SSH & Tailscale ---
+>> Tailscale Status:
+tailscale CLI not found
+
+>> Active Listening Ports (Loopback & Network):
+State  Recv-Q Send-Q  Local Address:Port  Peer Address:PortProcess                                
+LISTEN 0      511         127.0.0.1:43807      0.0.0.0:*    users:(("MainThread",pid=18545,fd=22))
+LISTEN 0      4096        127.0.0.1:35399      0.0.0.0:*    users:(("agy",pid=45701,fd=14))       
+LISTEN 0      4096        127.0.0.1:36319      0.0.0.0:*    users:(("agy",pid=45701,fd=12))       
+LISTEN 0      4096        127.0.0.1:11434      0.0.0.0:*                                          
+LISTEN 0      511         127.0.0.1:33547      0.0.0.0:*    users:(("MainThread",pid=35581,fd=41))
+LISTEN 0      4096    127.0.0.53%lo:53         0.0.0.0:*                                          
+LISTEN 0      4096       127.0.0.54:53         0.0.0.0:*                                          
+LISTEN 0      1000   10.255.255.254:53         0.0.0.0:*                                          
+LISTEN 0      511         127.0.0.1:38871      0.0.0.0:*    users:(("MainThread",pid=18621,fd=31))
+
+>> SSH Service Status:
+inactive
+inactive
+systemctl check for ssh/sshd failed or inactive
+
+--- 6. Ollama Server Status ---
+Ollama binary: /usr/local/bin/ollama
+ollama version is 0.34.4
+active
+Ollama systemd service: active
+Testing Ollama port 11434 via curl (loopback):
+{"version":"0.34.4"}
+
+--- 7. Android Device & ADB Connection ---
+adb not installed
+
+--- 8. Python & Development Environment ---
+Python 3: Python 3.12.3 at /usr/bin/python3
+Pip: pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)
+
+=================================================================
+ Discovery completed.
+=================================================================

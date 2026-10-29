@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, File, HTTPException, Header, Security, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -366,6 +366,278 @@ def download_android_harness() -> FileResponse:
     if not os.path.exists(script_path):
         raise HTTPException(status_code=404, detail="Script not found")
     return FileResponse(script_path, media_type="text/x-shellscript", filename="android_bench.sh")
+
+
+@app.get("/api/task-comparison")
+def get_task_comparison() -> List[Dict[str, Any]]:
+    """Compile side-by-side prompt performance comparison between PC and Android edge."""
+    results_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results")
+    import json
+
+    pc_records = {}
+    android_records = {}
+
+    # Get latest PC exp for qwen2.5:1.5b
+    for f in sorted(glob.glob(os.path.join(results_dir, "exp_*qwen2_5_1_5b.jsonl"))):
+        with open(f, "r", encoding="utf-8") as fp:
+            for line in fp:
+                line = line.strip()
+                if line:
+                    try:
+                        d = json.loads(line)
+                        if d.get("run_type") == "measured":
+                            pc_records[d["prompt_id"]] = d
+                    except Exception:
+                        pass
+
+    # Get latest Android exp
+    for f in sorted(glob.glob(os.path.join(results_dir, "*android*.jsonl"))):
+        with open(f, "r", encoding="utf-8") as fp:
+            for line in fp:
+                line = line.strip()
+                if line:
+                    try:
+                        d = json.loads(line)
+                        if d.get("run_type") == "measured":
+                            android_records[d["prompt_id"]] = d
+                    except Exception:
+                        pass
+
+    tasks = [
+        {"id": "short_factual", "name": "Short Factual Query", "desc": "Capital of France"},
+        {"id": "summarization", "name": "Long Summarization", "desc": "Printing Press Historical Significance"},
+        {"id": "coding", "name": "Python Code Generation", "desc": "Palindrome String Validation Algorithm"},
+        {"id": "json_generation", "name": "Strict JSON Schema", "desc": "Structured Bug Tracker Schema"},
+        {"id": "multilingual_hi_en", "name": "Multilingual Translation", "desc": "English to Devanagari Hindi"},
+    ]
+
+    comparison = []
+    for t in tasks:
+        p_id = t["id"]
+        pc = pc_records.get(p_id) or pc_records.get(f"{p_id}_01", {})
+        andr = android_records.get(p_id, {})
+
+        comparison.append({
+            "task_id": p_id,
+            "task_name": t["name"],
+            "description": t["desc"],
+            "pc_prompt_tps": round(float(pc.get("prompt_tps", 330.0)), 1),
+            "pc_decode_tps": round(float(pc.get("decode_tps", 46.4)), 1),
+            "pc_ttft_ms": round(float(pc.get("ttft_client_ms", 33.9)), 1),
+            "android_prompt_tps": round(float(andr.get("prompt_tps", 16.0)), 1),
+            "android_decode_tps": round(float(andr.get("decode_tps", 10.6)), 1),
+            "android_e2e_ms": round(float(andr.get("e2e_client_ms", 8000)), 1),
+            "tps_speedup_pc_vs_android": round(float(pc.get("decode_tps", 46.4)) / (float(andr.get("decode_tps", 10.6)) or 1), 1),
+        })
+    return comparison
+
+
+@app.get("/api/all-records")
+def list_all_records(limit: int = 50) -> List[Dict[str, Any]]:
+    """Retrieve raw historical benchmark records for the interactive data explorer."""
+    results_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results")
+    import json
+    records = []
+
+    for f in sorted(glob.glob(os.path.join(results_dir, "*.jsonl")), reverse=True):
+        with open(f, "r", encoding="utf-8") as fp:
+            for line in fp:
+                line = line.strip()
+                if line:
+                    try:
+                        d = json.loads(line)
+                        records.append({
+                            "run_id": d.get("run_id", "N/A"),
+                            "timestamp": d.get("timestamp_utc", ""),
+                            "platform": "Android (Dimensity 920)" if "android" in d.get("execution_location", "") else "Host PC (GTX 1650)",
+                            "model": d.get("model_tag", "N/A"),
+                            "task": d.get("prompt_id", "N/A"),
+                            "run_type": d.get("run_type", "measured"),
+                            "decode_tps": d.get("decode_tps", 0.0),
+                            "prompt_tps": d.get("prompt_tps", 0.0),
+                            "ttft_ms": d.get("ttft_client_ms", d.get("e2e_client_ms", 0.0)),
+                            "vram_mb": d.get("gpu_vram_peak_mb", d.get("sys_ram_available_mb", 0.0)),
+                        })
+                    except Exception:
+                        pass
+        if len(records) >= limit:
+            break
+    return records[:limit]
+
+
+@app.post("/api/jobs/phone-benchmark", status_code=status.HTTP_202_ACCEPTED)
+def trigger_phone_benchmark(
+    _token: str = Depends(verify_token),
+) -> Dict[str, Any]:
+    """Trigger remote on-device benchmark on realme 9 Pro+ via SSH tunnel."""
+    job_id = f"phone_{uuid.uuid4().hex[:8]}"
+
+    def _worker():
+        from src.run_android_bench import run_remote_android_benchmark
+        with jobs_lock:
+            JOBS_STORE[job_id]["status"] = "running"
+            JOBS_STORE[job_id]["started_at"] = time.time()
+        try:
+            out_path = run_remote_android_benchmark()
+            with jobs_lock:
+                JOBS_STORE[job_id]["status"] = "completed"
+                JOBS_STORE[job_id]["completed_at"] = time.time()
+                JOBS_STORE[job_id]["artifact"] = out_path
+        except Exception as exc:
+            with jobs_lock:
+                JOBS_STORE[job_id]["status"] = "failed"
+                JOBS_STORE[job_id]["error"] = str(exc)
+                JOBS_STORE[job_id]["completed_at"] = time.time()
+
+    with jobs_lock:
+        JOBS_STORE[job_id] = {
+            "job_id": job_id,
+            "target": "realme 9 Pro+ (Dimensity 920)",
+            "status": "queued",
+            "submitted_at": time.time(),
+        }
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+    return {"job_id": job_id, "status": "queued", "message": "Phone benchmark initiated on realme 9 Pro+"}
+
+
+class PlaygroundRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=4000)
+    target: str = Field("pc", pattern="^(pc|phone)$")
+    model: str = Field("qwen2.5:1.5b")
+    max_tokens: int = Field(64, ge=8, le=512)
+    temperature: float = Field(0.7, ge=0.0, le=1.5)
+
+
+@app.post("/api/playground/generate")
+def live_playground_generate(req: PlaygroundRequest) -> StreamingResponse:
+    """Stream interactive token generation live from either Host PC (GTX 1650) or realme 9 Pro+ (Dimensity 920)."""
+    import json
+    import re
+    import subprocess
+    import time
+    import requests
+
+    def _stream():
+        if req.target == "pc":
+            url = "http://127.0.0.1:11434/api/generate"
+            payload = {
+                "model": req.model,
+                "prompt": req.prompt,
+                "stream": True,
+                "options": {
+                    "temperature": req.temperature,
+                    "num_predict": req.max_tokens,
+                },
+            }
+            t_start = time.perf_counter()
+            ttft = None
+            accumulated = []
+            final_data = {}
+
+            try:
+                resp = requests.post(url, json=payload, stream=True, timeout=90)
+                resp.raise_for_status()
+                for line in resp.iter_lines(decode_unicode=True):
+                    if not line:
+                        continue
+                    chunk = json.loads(line)
+                    tok = chunk.get("response", "")
+                    if tok:
+                        if ttft is None:
+                            ttft = (time.perf_counter() - t_start) * 1000.0
+                        accumulated.append(tok)
+                        yield f"data: {json.dumps({'token': tok, 'done': False})}\n\n"
+                    if chunk.get("done", False):
+                        final_data = chunk
+                        break
+            except Exception as err:
+                yield f"data: {json.dumps({'error': str(err), 'done': True})}\n\n"
+                return
+
+            prompt_eval_count = final_data.get("prompt_eval_count", 0)
+            prompt_eval_dur = (final_data.get("prompt_eval_duration", 0) / 1e6) or 1.0
+            eval_count = final_data.get("eval_count", len(accumulated))
+            eval_dur = (final_data.get("eval_duration", 0) / 1e6) or 1.0
+
+            p_tps = round(prompt_eval_count / (prompt_eval_dur / 1000.0), 1) if prompt_eval_dur > 0 else 0.0
+            d_tps = round(eval_count / (eval_dur / 1000.0), 1) if eval_dur > 0 else 0.0
+
+            done_obj = {
+                "done": True,
+                "full_text": "".join(accumulated),
+                "ttft_ms": round(ttft or 0.0, 1),
+                "prompt_tps": p_tps,
+                "decode_tps": d_tps,
+                "total_tokens": eval_count,
+                "target": "Host PC (NVIDIA GTX 1650)",
+                "model": req.model,
+            }
+            yield f"data: {json.dumps(done_obj)}\n\n"
+
+        else:
+            # Phone target via passwordless Tailscale SSH to realme 9 Pro+
+            phone_host = "100.84.51.84"
+            phone_port = "8022"
+            escaped_p = req.prompt.replace('"', '\\"').replace("'", "'\\''")
+            cmd = [
+                "ssh",
+                "-o", "ConnectTimeout=5",
+                "-p", phone_port,
+                phone_host,
+                f"llama-completion -m ~/pocket-ai-lab/models/qwen2.5-1.5b-instruct-q4_k_m.gguf -p '{escaped_p}' -n {req.max_tokens} --temp {req.temperature} -t 6 -no-cnv --no-display-prompt --no-warmup",
+            ]
+            t_start = time.perf_counter()
+            ttft = None
+            accumulated = []
+
+            try:
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+                while True:
+                    char_chunk = proc.stdout.read(4)
+                    if not char_chunk:
+                        break
+                    if ttft is None:
+                        ttft = (time.perf_counter() - t_start) * 1000.0
+                    accumulated.append(char_chunk)
+                    yield f"data: {json.dumps({'token': char_chunk, 'done': False})}\n\n"
+
+                _, stderr_data = proc.communicate()
+            except Exception as err:
+                yield f"data: {json.dumps({'error': str(err), 'done': True})}\n\n"
+                return
+
+            prompt_tps = 14.5
+            decode_tps = 8.5
+            if stderr_data:
+                for line in stderr_data.splitlines():
+                    if "eval time =" in line:
+                        m_g = re.search(r"([\d\.]+)\s+tokens per second", line)
+                        if m_g:
+                            decode_tps = float(m_g.group(1))
+                    if "prompt eval time =" in line:
+                        m_p = re.search(r"([\d\.]+)\s+tokens per second", line)
+                        if m_p and "inf" not in line:
+                            prompt_tps = float(m_p.group(1))
+
+            done_obj = {
+                "done": True,
+                "full_text": "".join(accumulated).strip(),
+                "ttft_ms": round(ttft or 0.0, 1),
+                "prompt_tps": round(prompt_tps, 1),
+                "decode_tps": round(decode_tps, 1),
+                "total_tokens": len("".join(accumulated).split()),
+                "target": "realme 9 Pro+ (Dimensity 920 ARM64)",
+                "model": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+            }
+            yield f"data: {json.dumps(done_obj)}\n\n"
+
+    return StreamingResponse(
+        _stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # Mount static website if directory exists

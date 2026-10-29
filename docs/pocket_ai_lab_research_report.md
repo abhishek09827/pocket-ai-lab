@@ -114,7 +114,48 @@ Pass #5: 64.78 TPS | 82°C | 1,370 MB VRAM (-18.83%)
 
 ---
 
-## 6. Mobile Edge Deployment & Remote Control Architecture
+## 6. Mobile Edge Inference & The Energy Inversion
+
+We deployed `qwen2.5-1.5b-instruct-q4_k_m.gguf` natively to the realme 9 Pro+ smartphone running Android 13 / Termux, benchmarking against the identical model on the GTX 1650 host PC.
+
+### Empirical Cross-Hardware Comparison:
+| Metric | Host Workstation (Laptop) | Mobile Edge Target (Phone) | Divergence / Ratio |
+| :--- | :---: | :---: | :---: |
+| **Compute Engine** | NVIDIA GeForce GTX 1650 (4GB) | MediaTek Dimensity 920 (ARM64) | CUDA vs ARM NEON (6T) |
+| **Nominal System Power** | ~50 Watts | ~4 Watts | **12.5x lower power** |
+| **Average Prompt TPS** | 354.2 TPS | 16.1 TPS | **22.0x faster on PC** |
+| **Average Decode TPS** | 46.41 TPS | 10.64 TPS | **4.4x faster on PC** |
+| **Energy Efficiency** | **0.92 Tokens / Watt** | **2.66 Tokens / Watt** | **2.89x mobile superiority** |
+| **Peak Memory Footprint** | 1,293 MB VRAM | 1,180 MB RAM | Unified LPDDR4X |
+
+### Empirical Insights on Mobile Edge Architecture:
+1. **The Prefill vs Generation Bottleneck:** PC achieves a massive 22.0x speedup on prompt evaluation (prefill) due to 896 CUDA tensor cores executing parallel matrix multiplications ($O(N^2)$ prefill compute bound). However, during autoregressive token generation, PC speedup collapses to only 4.4x (46.4 vs 10.6 TPS) where execution is strictly memory-bandwidth bound.
+2. **The Energy Inversion:** At 10.64 tokens/sec, the smartphone produces text faster than typical human reading speed (~5–8 tokens/sec) while consuming only ~4W. It delivers **2.66 Tokens/Watt** compared to the workstation GPU's 0.92 Tokens/Watt. For autonomous, always-on edge sensing or battery-powered drones, mobile inference is nearly 3x more energy-efficient.
+3. **Android Vulkan Sandbox Boundary:** In unrooted Android 13, `/vendor/lib64/hw/vulkan.mali.so` is restricted by SELinux domain policies from unprivileged Termux CLI. ARM NEON vectorized CPU execution (configured with 6 threads saturating 2x Cortex-A78 big cores + 4x Cortex-A55 efficiency cores) represents the zero-root reproducible deployment standard.
+
+---
+
+## 7. Context Window & KV-Cache Scaling Dynamics ($O(N)$ vs $O(N^2)$)
+
+Using [`src/context_scaling_bench.py`](file:///home/abhishek/projects/ai-lab/src/context_scaling_bench.py), we mapped empirical context window expansion from 256 tokens up to the 4,096-token boundary for `qwen2.5:1.5b` on the 4GB GTX 1650.
+
+| Target Context | Measured Tokens | Time to First Token (TTFT) | Prompt Prefill Speed | Generation Decode Speed | Peak VRAM Footprint |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **256** | 296 | 9,531.2 ms (cold load) | 249.0 TPS | 39.8 TPS | 1,435.0 MB |
+| **512** | 569 | 1,110.0 ms | 553.1 TPS | 44.6 TPS | 1,435.0 MB |
+| **1,024** | 1,115 | 2,012.1 ms | 575.9 TPS | 43.8 TPS | 1,437.0 MB |
+| **2,048** | 2,186 | 4,188.4 ms | 529.8 TPS | 43.3 TPS | 1,439.0 MB |
+| **3,072** | 3,257 | 4,756.3 ms | 697.5 TPS | 42.1 TPS | 1,439.0 MB |
+| **4,096** | 4,328 | **21,550.2 ms** | 258.0 TPS | **38.3 TPS** | **1,524.0 MB** |
+
+### Mathematical & Architectural Findings:
+1. **The KV-Cache Expansion Slope:** The peak VRAM footprint expanded from 1,435 MB to 1,524 MB (+89 MB footprint). In 1.5B Q4_K_M models with Multi-Query Attention (MQA) or Grouped-Query Attention (GQA), the KV cache grows linearly with context length at approximately $20.5\text{ KB per token}$.
+2. **The Attention Latency Cliff:** Between 3,257 and 4,328 tokens, TTFT experiences a dramatic non-linear jump from 4.7s to 21.5s (+358% latency penalty). This inflection marks the transition where quadratic $O(N^2)$ full self-attention matrix calculation exceeds L2 cache capacity and triggers GPU memory paging.
+3. **Decode Throughput Resilience:** Despite the 4.5x surge in TTFT, autoregressive token generation degraded gracefully by only 14.1% (from 44.6 down to 38.3 TPS).
+
+---
+
+## 8. Mobile Edge Deployment & Remote Control Architecture
 
 Pocket AI Lab implements an authenticated personal AI workstation architecture:
 
@@ -138,7 +179,7 @@ Android Phone (realme 9 Pro+)
 
 ---
 
-## 7. Replication Guide for Researchers
+## 9. Replication Guide for Researchers
 
 All datasets, test suites, and scripts are open and version-controlled:
 
