@@ -73,7 +73,7 @@ Across a 10-pass continuous inference benchmark on the realme 9 Pro+ (200.4 seco
 | **Safe Model Memory** | 3,800 MB Safe VRAM Limit | ~3,200 MB Safe RAM (Leaves ~4.3 GB for Android OS) |
 | **Runtime Engine** | Ollama v0.34.4 (CUDA cuBLAS) | `llama.cpp` ARM64 CLI (NEON CPU vectorization) |
 | **Power Envelope** | ~50W TDP under load | ~4W TDP under load |
-| **Network Perimeter** | Loopback `127.0.0.1:8000` | Tailscale WireGuard Mesh (`100.84.51.84:8022`) |
+| **Network Perimeter** | Loopback `127.0.0.1:8000` | Tailscale WireGuard Mesh (`100.x.y.z:8022`) |
 
 ---
 

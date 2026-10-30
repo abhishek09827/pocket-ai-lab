@@ -27,11 +27,13 @@ import matplotlib.pyplot as plt
 
 def run_ssh_cmd(
     cmd: str,
-    phone_ip: str = "100.84.51.84",
+    phone_ip: Optional[str] = None,
     port: int = 8022,
     timeout: float = 60.0,
 ) -> Tuple[int, str, str]:
     """Execute command on phone via SSH tunnel."""
+    if phone_ip is None:
+        phone_ip = os.environ.get("POCKET_PHONE_HOST", "100.x.y.z")
     ssh_args = [
         "ssh", "-p", str(port),
         "-o", "StrictHostKeyChecking=no",
@@ -70,13 +72,15 @@ def query_battery_indicator(phone_ip: str, port: int) -> Optional[int]:
 
 
 def run_sustained_mobile_bench(
-    phone_ip: str = "100.84.51.84",
+    phone_ip: Optional[str] = None,
     port: int = 8022,
     iterations: int = 15,
     tokens_per_pass: int = 128,
     output_dir: str = "results",
 ) -> Dict[str, Any]:
     """Execute sustained mobile benchmark."""
+    if phone_ip is None:
+        phone_ip = os.environ.get("POCKET_PHONE_HOST", "100.x.y.z")
     print("=" * 80)
     print(" POCKET AI LAB — SUSTAINED MOBILE INFERENCE & THERMAL ANALYSIS")
     print(f" Target Device : realme 9 Pro+ (MediaTek Dimensity 920 6nm)")
@@ -282,7 +286,7 @@ def plot_sustained_degradation(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--phone-ip", type=str, default="100.84.51.84")
+    parser.add_argument("--phone-ip", type=str, default=os.environ.get("POCKET_PHONE_HOST", "100.x.y.z"))
     parser.add_argument("--port", type=int, default=8022)
     parser.add_argument("--iterations", type=int, default=15)
     parser.add_argument("--tokens", type=int, default=128)

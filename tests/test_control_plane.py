@@ -156,3 +156,15 @@ def test_regression_comparison():
         data = resp.json()
         assert "deltas" in data
         assert "verdict" in data
+
+    # Test path traversal prevention
+    resp_traversal = client.get("/api/regression/compare?run1=../../../../etc/passwd&run2=../../../../etc/passwd")
+    assert resp_traversal.status_code == 404
+    assert "not found" in resp_traversal.json()["detail"]
+
+
+def test_playground_endpoint_security():
+    # Must reject without token
+    req = {"prompt": "Hello", "target": "pc", "model": "qwen2.5:0.5b"}
+    resp = client.post("/api/playground/generate", json=req)
+    assert resp.status_code == 401

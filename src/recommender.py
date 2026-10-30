@@ -191,8 +191,9 @@ def evaluate_deployment_recommendation(target: DeploymentTarget, results_dir: st
         f"{verdict.replace('_', ' ')}."
     )
 
+    phone_ip_repr = os.environ.get("POCKET_PHONE_HOST", "<PHONE_TAILSCALE_IP>")
     repro_cmd = (
-        f"ssh -p 8022 100.84.51.84 'llama-completion -m ~/pocket-ai-lab/models/{target.model_tag.replace(':', '-')}-{target.quantization.lower()}.gguf -p \"test\" -n 64 -t 6'"
+        f"ssh -p 8022 {phone_ip_repr} 'llama-completion -m ~/pocket-ai-lab/models/{target.model_tag.replace(':', '-')}-{target.quantization.lower()}.gguf -p \"test\" -n 64 -t 6'"
         if is_phone
         else f"python3 -m src.benchmark --model {target.model_tag} --warmups 1 --repeats 2"
     )

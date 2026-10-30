@@ -279,12 +279,14 @@ def compare_regression(
     run2: str,
 ) -> Dict[str, Any]:
     """Compare performance and quality between two benchmark experiment files."""
-    results_dir = "results"
+    results_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results"))
     
     def load_metrics(filename: str) -> Dict[str, Any]:
-        path = os.path.join(results_dir, filename if filename.endswith((".csv", ".jsonl")) else f"{filename}.csv")
+        # Guard against path traversal
+        clean_name = os.path.basename(filename)
+        path = os.path.join(results_dir, clean_name if clean_name.endswith((".csv", ".jsonl")) else f"{clean_name}.csv")
         if not os.path.exists(path):
-            raise HTTPException(status_code=404, detail=f"Result file '{filename}' not found")
+            raise HTTPException(status_code=404, detail=f"Result file '{clean_name}' not found")
         
         tps_list = []
         ttft_list = []
@@ -601,8 +603,14 @@ class PlaygroundRequest(BaseModel):
 
 
 @app.post("/api/playground/generate")
-def live_playground_generate(req: PlaygroundRequest) -> StreamingResponse:
-    """Stream interactive token generation live from either Host PC (GTX 1650) or realme 9 Pro+ (Dimensity 920)."""
+def live_playground_generate(
+    req: PlaygroundRequest,
+    _token: str = Depends(verify_token),
+) -> StreamingResponse:
+    """Stream interactive token generation live from either Host PC (GTX 1650) or realme 9 Pro+ (Dimensity 920).
+    
+    Protected by X-Pocket-Token header authentication.
+    """
     import json
     import re
     import subprocess
@@ -668,8 +676,8 @@ def live_playground_generate(req: PlaygroundRequest) -> StreamingResponse:
 
         else:
             # Phone target via passwordless Tailscale SSH to realme 9 Pro+
-            phone_host = "100.84.51.84"
-            phone_port = "8022"
+            phone_host = os.environ.get("POCKET_PHONE_HOST", "100.x.y.z")
+            phone_port = os.environ.get("POCKET_PHONE_PORT", "8022")
             escaped_p = req.prompt.replace('"', '\\"').replace("'", "'\\''")
             cmd = [
                 "ssh",

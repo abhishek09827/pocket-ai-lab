@@ -165,7 +165,7 @@ Android Phone (realme 9 Pro+)
   ├── Termux ARM64 Engine: Native llama-cli (Dimensity 920, 8GB RAM)
   │     └─ scripts/android_bench.sh -> results/exp_android_*.jsonl
   │
-  └── Tailscale Encrypted WireGuard Mesh (100.84.51.84 <-> 100.82.20.127)
+  └── Tailscale Encrypted WireGuard Mesh (100.x.y.z <-> 100.x.y.w)
         │
         └── SSH Port Forwarding Tunnel:
               ├── ssh -N -L 8000:127.0.0.1:8000   -> Pocket AI Lab Web Dashboard & Control Plane

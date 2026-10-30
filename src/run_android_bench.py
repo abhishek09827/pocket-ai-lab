@@ -13,13 +13,16 @@ import os
 import subprocess
 import sys
 import time
+from typing import Optional
 
 
 def run_remote_android_benchmark(
-    phone_ip: str = "100.84.51.84",
+    phone_ip: Optional[str] = None,
     port: int = 8022,
 ) -> str:
     """Execute benchmark suite remotely on Android device over SSH."""
+    if phone_ip is None:
+        phone_ip = os.environ.get("POCKET_PHONE_HOST", "100.x.y.z")
     print(f"\n========================================================")
     print(f" POCKET AI LAB — REMOTE ANDROID BENCHMARK DISPATCHER")
     print(f" Target Device : realme 9 Pro+ (MediaTek Dimensity 920)")
@@ -120,7 +123,7 @@ def run_remote_android_benchmark(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run on-device benchmark on Android phone")
-    parser.add_argument("--phone-ip", type=str, default="100.84.51.84", help="Phone Tailscale IP")
+    parser.add_argument("--phone-ip", type=str, default=os.environ.get("POCKET_PHONE_HOST", "100.x.y.z"), help="Phone Tailscale IP")
     parser.add_argument("--port", type=int, default=8022, help="Termux SSH port")
     args = parser.parse_args()
 

@@ -101,7 +101,7 @@ flowchart TD
 | **Usable AI RAM** | 3,800 MB Safe VRAM Limit | ~3,200 MB Safe RAM Buffer (Leaves ~4.3 GB for Android OS) |
 | **Inference Backend** | Ollama v0.34.4 (CUDA cuBLAS) | `llama.cpp` ARM64 CLI (NEON vectorized CPU) |
 | **Power Envelope** | ~50W TDP under full inference load | ~4W TDP under full inference load |
-| **Network Link** | Local Loopback (`127.0.0.1`) | Tailscale WireGuard mesh (`100.84.51.84:8022`) |
+| **Network Link** | Local Loopback (`127.0.0.1`) | Tailscale WireGuard mesh (`100.x.y.z:8022`) |
 
 ---
 
@@ -284,7 +284,7 @@ PYTHONPATH=. .venv/bin/python3 -m src.run_application_eval --suite retrieval --m
 
 ### 4. Run Sustained Mobile Benchmark on realme 9 Pro+ Over SSH
 ```bash
-PYTHONPATH=. .venv/bin/python3 scripts/sustained_mobile_bench.py --host 100.84.51.84 --port 8022 --passes 10
+PYTHONPATH=. .venv/bin/python3 scripts/sustained_mobile_bench.py --host <PHONE_IP> --port 8022 --passes 10
 ```
 
 ### 5. Start Local Authenticated Control Plane Daemon

@@ -797,7 +797,7 @@
                     </div>
                 </div>
                 <div class="hw-status-pill" style="color: #34d399; background: rgba(52, 211, 153, 0.15);">
-                    <span class="status-dot"></span> SSH (100.84.51.84:8022)
+                    <span class="status-dot"></span> SSH Tunnel Active
                 </div>
             </div>
         </div>
@@ -1180,7 +1180,7 @@
                         <li><strong>Safe Usable Model RAM:</strong> ~3,200 MB (Preserves ~4.3 GB for Android OS, GMS & UI)</li>
                         <li><strong>Thermal Architecture:</strong> Multi-layer Vapor Chamber Cooling System</li>
                         <li><strong>Inference Runtime:</strong> <code>llama.cpp</code> ARM64 CLI with NEON vectorization</li>
-                        <li><strong>Mesh Connectivity:</strong> Tailscale WireGuard mesh node (<code>100.84.51.84:8022</code>)</li>
+                        <li><strong>Mesh Connectivity:</strong> Tailscale WireGuard mesh node (<code>100.x.y.z:8022</code>)</li>
                     </ul>
 
                     <div style="margin-top: 18px; padding: 12px; background: rgba(56, 189, 248, 0.1); border-left: 3px solid var(--accent-blue); border-radius: 6px; font-size: 0.85rem; color: var(--text-muted);">
@@ -1616,7 +1616,7 @@ PYTHONPATH=. .venv/bin/python3 -m src.run_application_eval --suite structured --
 PYTHONPATH=. .venv/bin/python3 -m src.run_application_eval --suite retrieval --model nomic-embed-text:latest
 
 <span style="color: #9ca3af;"># 3. Run sustained mobile thermal stress benchmark on realme 9 Pro+ over SSH:</span>
-PYTHONPATH=. .venv/bin/python3 scripts/sustained_mobile_bench.py --host 100.84.51.84 --port 8022 --passes 10
+PYTHONPATH=. .venv/bin/python3 scripts/sustained_mobile_bench.py --host <PHONE_IP> --port 8022 --passes 10
                 </div>
             </div>
 
@@ -1890,7 +1890,7 @@ PYTHONPATH=. .venv/bin/python3 scripts/sustained_mobile_bench.py --host 100.84.5
             }
 
             const reproCmd = isPhone ?
-                `ssh -p 8022 100.84.51.84 'llama-completion -m ~/pocket-ai-lab/models/${mod.replace(":", "-")}-${quant.toLowerCase()}.gguf -p "test" -n 64 -t 6'` :
+                `ssh -p 8022 <PHONE_IP> 'llama-completion -m ~/pocket-ai-lab/models/${mod.replace(":", "-")}-${quant.toLowerCase()}.gguf -p "test" -n 64 -t 6'` :
                 `python3 -m src.benchmark --model ${mod} --warmups 1 --repeats 2`;
 
             renderRecommendationResult({
